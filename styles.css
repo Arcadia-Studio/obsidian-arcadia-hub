@@ -1,0 +1,507 @@
+/* Arcadia Hub - styles.css */
+
+/* ===== Container ===== */
+.arcadia-hub-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	font-size: var(--font-ui-small);
+}
+
+/* ===== Header ===== */
+.arcadia-hub-header {
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.arcadia-hub-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.arcadia-hub-title {
+	margin: 0;
+	font-size: var(--font-ui-medium);
+	flex: 1;
+}
+
+.arcadia-hub-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.arcadia-hub-status-dot.is-connected {
+	background-color: var(--color-green);
+}
+
+.arcadia-hub-status-dot.is-disconnected {
+	background-color: var(--text-faint);
+}
+
+.arcadia-hub-refresh-btn {
+	padding: 4px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	color: var(--text-muted);
+	border-radius: var(--radius-s);
+}
+
+.arcadia-hub-refresh-btn:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.arcadia-hub-active-repo {
+	margin-top: 4px;
+}
+
+.arcadia-hub-repo-badge {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	padding: 2px 6px;
+	border-radius: var(--radius-s);
+}
+
+/* ===== Tab Bar ===== */
+.arcadia-hub-tab-bar {
+	display: flex;
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: 0 8px;
+}
+
+.arcadia-hub-tab {
+	padding: 8px 12px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	border-bottom: 2px solid transparent;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.arcadia-hub-tab:hover {
+	color: var(--text-normal);
+}
+
+.arcadia-hub-tab.is-active {
+	color: var(--text-accent);
+	border-bottom-color: var(--text-accent);
+}
+
+/* ===== Content ===== */
+.arcadia-hub-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px 12px;
+}
+
+/* ===== Filter Bar ===== */
+.arcadia-hub-filter-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+	flex-wrap: wrap;
+}
+
+.arcadia-hub-state-toggle {
+	display: flex;
+	gap: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	overflow: hidden;
+}
+
+.arcadia-hub-toggle-btn {
+	padding: 4px 10px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.arcadia-hub-toggle-btn.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.arcadia-hub-label-filter {
+	flex: 1;
+	min-width: 80px;
+	padding: 4px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+/* ===== Buttons ===== */
+.arcadia-hub-btn {
+	padding: 4px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	cursor: pointer;
+	font-size: var(--font-ui-smaller);
+}
+
+.arcadia-hub-btn:hover {
+	background: var(--background-modifier-hover);
+}
+
+.arcadia-hub-btn-primary {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+}
+
+.arcadia-hub-btn-primary:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.arcadia-hub-btn-small {
+	padding: 2px 8px;
+	font-size: var(--font-ui-smaller);
+}
+
+/* ===== Issue Items ===== */
+.arcadia-hub-issue-item {
+	padding: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.arcadia-hub-issue-item:last-child {
+	border-bottom: none;
+}
+
+.arcadia-hub-issue-header {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.arcadia-hub-issue-header:hover {
+	color: var(--text-accent);
+}
+
+.arcadia-hub-issue-number {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	flex-shrink: 0;
+}
+
+.arcadia-hub-issue-title {
+	font-weight: var(--font-semibold);
+	word-break: break-word;
+}
+
+.arcadia-hub-issue-meta {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	flex-wrap: wrap;
+}
+
+.arcadia-hub-label {
+	padding: 1px 6px;
+	border-radius: 10px;
+	font-size: 10px;
+	font-weight: var(--font-semibold);
+	line-height: 1.5;
+}
+
+.arcadia-hub-assignee,
+.arcadia-hub-comments,
+.arcadia-hub-date {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.arcadia-hub-issue-body {
+	margin-top: 8px;
+	padding: 8px;
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	max-height: 300px;
+	overflow-y: auto;
+}
+
+.arcadia-hub-issue-actions,
+.arcadia-hub-pr-actions {
+	margin-top: 6px;
+	display: flex;
+	gap: 8px;
+}
+
+/* ===== PR Items ===== */
+.arcadia-hub-pr-item {
+	padding: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	border-left: 3px solid transparent;
+}
+
+.arcadia-hub-pr-item:last-child {
+	border-bottom: none;
+}
+
+.arcadia-hub-pr-open {
+	border-left-color: var(--color-blue);
+}
+
+.arcadia-hub-pr-merged {
+	border-left-color: var(--color-green);
+}
+
+.arcadia-hub-pr-closed {
+	border-left-color: var(--color-red);
+}
+
+.arcadia-hub-pr-header {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.arcadia-hub-pr-header:hover {
+	color: var(--text-accent);
+}
+
+.arcadia-hub-pr-number {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	flex-shrink: 0;
+}
+
+.arcadia-hub-pr-title {
+	font-weight: var(--font-semibold);
+	word-break: break-word;
+}
+
+.arcadia-hub-pr-state {
+	font-size: 10px;
+	padding: 1px 6px;
+	border-radius: 10px;
+	font-weight: var(--font-semibold);
+	flex-shrink: 0;
+}
+
+.arcadia-hub-pr-state-open {
+	background: var(--color-blue);
+	color: #fff;
+}
+
+.arcadia-hub-pr-state-merged {
+	background: var(--color-green);
+	color: #fff;
+}
+
+.arcadia-hub-pr-state-closed {
+	background: var(--color-red);
+	color: #fff;
+}
+
+.arcadia-hub-pr-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+	flex-wrap: wrap;
+}
+
+.arcadia-hub-pr-author,
+.arcadia-hub-pr-branch,
+.arcadia-hub-pr-review {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.arcadia-hub-pr-branch {
+	font-family: var(--font-monospace);
+}
+
+.arcadia-hub-pr-details {
+	margin-top: 8px;
+	padding: 8px;
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+}
+
+.arcadia-hub-pr-branch-info,
+.arcadia-hub-pr-review-info {
+	margin-bottom: 4px;
+	color: var(--text-muted);
+}
+
+/* ===== Repo Items ===== */
+.arcadia-hub-repo-item {
+	padding: 10px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+}
+
+.arcadia-hub-repo-item:last-child {
+	border-bottom: none;
+}
+
+.arcadia-hub-repo-item.is-active {
+	background: var(--background-secondary);
+	border: 1px solid var(--interactive-accent);
+}
+
+.arcadia-hub-repo-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.arcadia-hub-repo-name {
+	font-weight: var(--font-semibold);
+}
+
+.arcadia-hub-repo-active-badge {
+	font-size: 10px;
+	padding: 1px 6px;
+	border-radius: 10px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.arcadia-hub-repo-desc {
+	margin: 4px 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.arcadia-hub-repo-stats {
+	display: flex;
+	gap: 12px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.arcadia-hub-repo-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 6px;
+}
+
+/* ===== Links ===== */
+.arcadia-hub-link {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-accent);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.arcadia-hub-link:hover {
+	text-decoration: underline;
+}
+
+/* ===== States ===== */
+.arcadia-hub-empty-state {
+	color: var(--text-muted);
+	text-align: center;
+	padding: 24px 12px;
+	font-style: italic;
+}
+
+.arcadia-hub-loading {
+	color: var(--text-muted);
+	text-align: center;
+	padding: 24px 12px;
+}
+
+.arcadia-hub-error {
+	color: var(--text-error);
+	padding: 8px;
+}
+
+.arcadia-hub-muted {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+/* ===== Pagination ===== */
+.arcadia-hub-pagination {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	padding: 12px 0;
+}
+
+/* ===== Create Issue Modal ===== */
+.arcadia-hub-create-issue-modal {
+	padding: 16px;
+}
+
+.arcadia-hub-modal-repo {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	margin-bottom: 12px;
+}
+
+.arcadia-hub-issue-body-input {
+	width: 100%;
+	min-height: 200px;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	resize: vertical;
+}
+
+.arcadia-hub-labels-section {
+	margin-top: 12px;
+}
+
+.arcadia-hub-labels-section h3 {
+	margin: 0 0 8px 0;
+	font-size: var(--font-ui-small);
+}
+
+.arcadia-hub-label-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.arcadia-hub-label-chip {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.arcadia-hub-label-chip input[type="checkbox"] {
+	margin: 0;
+}
+
+.arcadia-hub-label-chip label {
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.arcadia-hub-modal-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
