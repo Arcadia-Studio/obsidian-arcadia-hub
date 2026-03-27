@@ -1,3 +1,5 @@
+import type { LicenseStatus } from './license';
+
 export interface ArcadiaHubSettings {
 	githubToken: string;
 	defaultRepo: string;
@@ -5,6 +7,7 @@ export interface ArcadiaHubSettings {
 	issuesPerPage: number;
 	autoRefreshMinutes: number;
 	licenseKey: string;
+	licenseStatus: LicenseStatus | null;
 	isPro: boolean;
 }
 
@@ -15,6 +18,7 @@ export const DEFAULT_SETTINGS: ArcadiaHubSettings = {
 	issuesPerPage: 25,
 	autoRefreshMinutes: 0,
 	licenseKey: "",
+	licenseStatus: null,
 	isPro: false,
 };
 
