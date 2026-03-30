@@ -1,5 +1,7 @@
 # Arcadia Hub
 
+![Arcadia Hub](docs/screenshot.png)
+
 A GitHub integration sidebar for Obsidian: browse repositories, manage issues and pull requests, monitor CI status, and create GitHub issues directly from your notes.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
