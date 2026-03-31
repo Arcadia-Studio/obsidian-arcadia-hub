@@ -28,7 +28,7 @@ __export(main_exports, {
   default: () => ArcadiaHubPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // src/types.ts
 var DEFAULT_SETTINGS = {
@@ -38,12 +38,46 @@ var DEFAULT_SETTINGS = {
   issuesPerPage: 25,
   autoRefreshMinutes: 0,
   licenseKey: "",
+  licenseStatus: null,
   isPro: false
 };
 
 // src/settings.ts
+var import_obsidian2 = require("obsidian");
+
+// src/license.ts
 var import_obsidian = require("obsidian");
-var ArcadiaHubSettingTab = class extends import_obsidian.PluginSettingTab {
+var LICENSE_CACHE_DURATION = 24 * 60 * 60 * 1e3;
+async function validateLicense(licenseKey, instanceName = "obsidian") {
+  var _a, _b, _c;
+  try {
+    const response = await (0, import_obsidian.requestUrl)({
+      url: "https://api.lemonsqueezy.com/v1/licenses/validate",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ license_key: licenseKey, instance_name: instanceName })
+    });
+    const data = response.json;
+    if (data.valid) {
+      return {
+        valid: true,
+        instanceId: (_a = data.instance) == null ? void 0 : _a.id,
+        customerEmail: (_b = data.meta) == null ? void 0 : _b.customer_email,
+        expiresAt: (_c = data.license_key) == null ? void 0 : _c.expires_at,
+        lastChecked: Date.now()
+      };
+    }
+    return { valid: false, lastChecked: Date.now() };
+  } catch (e) {
+    return { valid: false, lastChecked: Date.now() };
+  }
+}
+
+// src/settings.ts
+var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -51,27 +85,27 @@ var ArcadiaHubSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h1", { text: "Arcadia Hub" });
-    containerEl.createEl("h2", { text: "GitHub Integration" });
-    new import_obsidian.Setting(containerEl).setName("Personal Access Token").setDesc("GitHub PAT with repo scope. Generate at GitHub > Settings > Developer settings > Personal access tokens.").addText(
+    new import_obsidian2.Setting(containerEl).setName("Arcadia Hub").setHeading();
+    new import_obsidian2.Setting(containerEl).setName("GitHub integration").setHeading();
+    new import_obsidian2.Setting(containerEl).setName("Personal access token").setDesc("GitHub PAT with repo scope. Generate at GitHub > Settings > Developer settings > Personal access tokens.").addText(
       (text) => text.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx").setValue(this.plugin.settings.githubToken).onChange(async (value) => {
         this.plugin.settings.githubToken = value.trim();
         await this.plugin.saveSettings();
       }).inputEl.type = "password"
     );
-    new import_obsidian.Setting(containerEl).setName("Default repository").setDesc("Format: owner/repo (e.g. octocat/hello-world)").addText(
+    new import_obsidian2.Setting(containerEl).setName("Default repository").setDesc("Format: owner/repo (e.g. octocat/hello-world)").addText(
       (text) => text.setPlaceholder("owner/repo").setValue(this.plugin.settings.defaultRepo).onChange(async (value) => {
         this.plugin.settings.defaultRepo = value.trim();
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Show closed issues").setDesc("Include closed issues in the issues list").addToggle(
+    new import_obsidian2.Setting(containerEl).setName("Show closed issues").setDesc("Include closed issues in the issues list").addToggle(
       (toggle) => toggle.setValue(this.plugin.settings.showClosedIssues).onChange(async (value) => {
         this.plugin.settings.showClosedIssues = value;
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Issues per page").setDesc("Number of issues to load per page (1-100)").addText(
+    new import_obsidian2.Setting(containerEl).setName("Issues per page").setDesc("Number of issues to load per page (1-100)").addText(
       (text) => text.setPlaceholder("25").setValue(String(this.plugin.settings.issuesPerPage)).onChange(async (value) => {
         const num = parseInt(value, 10);
         if (!isNaN(num) && num >= 1 && num <= 100) {
@@ -80,7 +114,7 @@ var ArcadiaHubSettingTab = class extends import_obsidian.PluginSettingTab {
         }
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Auto-refresh interval").setDesc("Minutes between automatic refreshes. Set to 0 for manual refresh only.").addText(
+    new import_obsidian2.Setting(containerEl).setName("Auto-refresh interval").setDesc("Minutes between automatic refreshes. Set to 0 for manual refresh only.").addText(
       (text) => text.setPlaceholder("0").setValue(String(this.plugin.settings.autoRefreshMinutes)).onChange(async (value) => {
         const num = parseInt(value, 10);
         if (!isNaN(num) && num >= 0) {
@@ -89,22 +123,53 @@ var ArcadiaHubSettingTab = class extends import_obsidian.PluginSettingTab {
         }
       })
     );
-    containerEl.createEl("h2", { text: "License" });
-    new import_obsidian.Setting(containerEl).setName("License key").setDesc("Enter your Arcadia Hub Pro license key to unlock premium modules.").addText(
+    new import_obsidian2.Setting(containerEl).setName("License").setHeading();
+    const licenseStatus = this.plugin.settings.licenseStatus;
+    const isPro = this.plugin.settings.isPro && (licenseStatus == null ? void 0 : licenseStatus.valid);
+    const statusDesc = isPro ? `Active${(licenseStatus == null ? void 0 : licenseStatus.customerEmail) ? ` (${licenseStatus.customerEmail})` : ""}${(licenseStatus == null ? void 0 : licenseStatus.expiresAt) ? ` - expires ${licenseStatus.expiresAt}` : ""}` : "No active license. Enter your license key and click Validate.";
+    const licenseStatusEl = containerEl.createEl("p", {
+      text: `License status: ${statusDesc}`,
+      cls: isPro ? "mod-success" : "mod-warning"
+    });
+    new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your Arcadia Hub Premium license key from Lemon Squeezy.").addText(
       (text) => text.setPlaceholder("XXXX-XXXX-XXXX-XXXX").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
         this.plugin.settings.licenseKey = value.trim();
         await this.plugin.saveSettings();
       })
+    ).addButton(
+      (btn) => btn.setButtonText("Validate").setCta().onClick(async () => {
+        const key = this.plugin.settings.licenseKey.trim();
+        if (!key)
+          return;
+        btn.setButtonText("Checking...").setDisabled(true);
+        const status = await validateLicense(key);
+        this.plugin.settings.licenseStatus = status;
+        this.plugin.settings.isPro = status.valid;
+        await this.plugin.saveSettings();
+        btn.setButtonText("Validate").setDisabled(false);
+        if (status.valid) {
+          licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+          licenseStatusEl.className = "mod-success";
+        } else {
+          licenseStatusEl.textContent = "License status: Invalid or expired. Check your key and try again.";
+          licenseStatusEl.className = "mod-warning";
+        }
+      })
     );
-    containerEl.createEl("h2", { text: "Additional Modules" });
-    new import_obsidian.Setting(containerEl).setName("Claude Code Bridge").setDesc("Coming Soon: MCP server integration, session history, CLAUDE.md editor.").setDisabled(true);
-    new import_obsidian.Setting(containerEl).setName("NotebookLM Sync").setDesc("Coming Soon: Push notes to NotebookLM, pull audio overviews back into your vault.").setDisabled(true);
-    new import_obsidian.Setting(containerEl).setName("AI Router").setDesc("Coming Soon: Route content to Claude, NotebookLM, or local LLMs from context menu.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).addButton(
+      (btn) => btn.setButtonText("Get Arcadia Hub Premium").onClick(() => {
+        window.open("https://arcadia-studio.lemonsqueezy.com", "_blank");
+      })
+    );
+    new import_obsidian2.Setting(containerEl).setName("Additional modules").setHeading();
+    new import_obsidian2.Setting(containerEl).setName("Claude Code Bridge").setDesc("Coming Soon: MCP server integration, session history, CLAUDE.md editor.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("NotebookLM Sync").setDesc("Coming Soon: Push notes to NotebookLM, pull audio overviews back into your vault.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("AI Router").setDesc("Coming Soon: Route content to Claude, NotebookLM, or local LLMs from context menu.").setDisabled(true);
   }
 };
 
 // src/github/github-api.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 var GITHUB_API = "https://api.github.com";
 var CACHE_TTL_MS = 6e4;
 var GitHubAPI = class {
@@ -153,12 +218,12 @@ var GitHubAPI = class {
       params.body = JSON.stringify(body);
     }
     try {
-      const response = await (0, import_obsidian2.requestUrl)(params);
+      const response = await (0, import_obsidian3.requestUrl)(params);
       const remaining = response.headers["x-ratelimit-remaining"];
       if (remaining !== void 0) {
         this.rateLimitRemaining = parseInt(String(remaining), 10);
         if (this.rateLimitRemaining < 10) {
-          new import_obsidian2.Notice(
+          new import_obsidian3.Notice(
             `Arcadia Hub: GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
           );
         }
@@ -408,10 +473,10 @@ var GitHubAPI = class {
 };
 
 // src/hub-view.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/github/issues-view.ts
-var import_obsidian3 = require("obsidian");
+var import_obsidian4 = require("obsidian");
 var IssuesView = class {
   constructor(plugin, containerEl, component) {
     this.issues = [];
@@ -574,7 +639,7 @@ var IssuesView = class {
       if (this.expandedIssue === issue.number) {
         const body = item.createDiv({ cls: "arcadia-hub-issue-body" });
         if (issue.body) {
-          import_obsidian3.MarkdownRenderer.renderMarkdown(
+          import_obsidian4.MarkdownRenderer.renderMarkdown(
             issue.body,
             body,
             "",
@@ -903,7 +968,7 @@ var ReposView = class {
 
 // src/hub-view.ts
 var HUB_VIEW_TYPE = "arcadia-hub-view";
-var HubView = class extends import_obsidian4.ItemView {
+var HubView = class extends import_obsidian5.ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.activeTab = "issues";
@@ -1008,8 +1073,8 @@ var HubView = class extends import_obsidian4.ItemView {
 };
 
 // src/github/create-issue-modal.ts
-var import_obsidian5 = require("obsidian");
-var CreateIssueModal = class extends import_obsidian5.Modal {
+var import_obsidian6 = require("obsidian");
+var CreateIssueModal = class extends import_obsidian6.Modal {
   constructor(app, plugin, prefillTitle = "", prefillBody = "") {
     super(app);
     this.selectedLabels = /* @__PURE__ */ new Set();
@@ -1035,12 +1100,12 @@ var CreateIssueModal = class extends import_obsidian5.Modal {
       text: `Repository: ${repo}`,
       cls: "arcadia-hub-modal-repo"
     });
-    new import_obsidian5.Setting(contentEl).setName("Title").addText(
+    new import_obsidian6.Setting(contentEl).setName("Title").addText(
       (text) => text.setPlaceholder("Issue title (required)").setValue(this.titleValue).onChange((value) => {
         this.titleValue = value;
       })
     );
-    const bodySetting = new import_obsidian5.Setting(contentEl).setName("Description");
+    const bodySetting = new import_obsidian6.Setting(contentEl).setName("Description");
     const textArea = bodySetting.controlEl.createEl("textarea", {
       cls: "arcadia-hub-issue-body-input",
       attr: { rows: "10", placeholder: "Issue description (Markdown supported)" }
@@ -1097,7 +1162,7 @@ var CreateIssueModal = class extends import_obsidian5.Modal {
   }
   async createIssue() {
     if (!this.titleValue.trim()) {
-      new import_obsidian5.Notice("Issue title is required.");
+      new import_obsidian6.Notice("Issue title is required.");
       return;
     }
     const repo = this.plugin.getActiveRepo();
@@ -1110,11 +1175,11 @@ var CreateIssueModal = class extends import_obsidian5.Modal {
         this.bodyValue.trim(),
         Array.from(this.selectedLabels)
       );
-      new import_obsidian5.Notice(`Issue #${issue.number} created successfully.`);
+      new import_obsidian6.Notice(`Issue #${issue.number} created successfully.`);
       this.close();
       this.plugin.refreshHubView();
     } catch (err) {
-      new import_obsidian5.Notice(`Failed to create issue: ${err.message}`);
+      new import_obsidian6.Notice(`Failed to create issue: ${err.message}`);
     }
   }
   getLuminance(hex) {
@@ -1130,7 +1195,7 @@ var CreateIssueModal = class extends import_obsidian5.Modal {
 };
 
 // src/main.ts
-var ArcadiaHubPlugin = class extends import_obsidian6.Plugin {
+var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
   constructor() {
     super(...arguments);
     this.settings = DEFAULT_SETTINGS;
@@ -1145,28 +1210,34 @@ var ArcadiaHubPlugin = class extends import_obsidian6.Plugin {
     this.registerView(HUB_VIEW_TYPE, (leaf) => new HubView(leaf, this));
     this.addSettingTab(new ArcadiaHubSettingTab(this.app, this));
     this.addRibbonIcon("git-branch", "Open Arcadia Hub", () => {
-      this.activateView();
+      void this.activateView();
     });
     this.addCommand({
       id: "open-hub",
       name: "Open Hub",
-      callback: () => this.activateView()
+      callback: () => {
+        void this.activateView();
+      }
     });
     this.addCommand({
       id: "view-github-issues",
       name: "View GitHub Issues",
-      callback: () => this.activateView("issues")
+      callback: () => {
+        void this.activateView("issues");
+      }
     });
     this.addCommand({
       id: "view-pull-requests",
       name: "View Pull Requests",
-      callback: () => this.activateView("prs")
+      callback: () => {
+        void this.activateView("prs");
+      }
     });
     this.addCommand({
       id: "create-issue-from-note",
       name: "Create Issue from Note",
       checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(import_obsidian6.MarkdownView);
+        const view = this.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView);
         if (!view)
           return false;
         if (checking)
@@ -1181,7 +1252,7 @@ var ArcadiaHubPlugin = class extends import_obsidian6.Plugin {
     });
     this.setupAutoRefresh();
   }
-  async onunload() {
+  onunload() {
     if (this.refreshInterval !== null) {
       window.clearInterval(this.refreshInterval);
     }
@@ -1241,7 +1312,9 @@ var ArcadiaHubPlugin = class extends import_obsidian6.Plugin {
     const minutes = this.settings.autoRefreshMinutes;
     if (minutes > 0) {
       this.refreshInterval = window.setInterval(
-        () => this.refreshHubView(),
+        () => {
+          void this.refreshHubView();
+        },
         minutes * 60 * 1e3
       );
       this.registerInterval(this.refreshInterval);

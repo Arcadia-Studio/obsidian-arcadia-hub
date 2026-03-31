@@ -26,26 +26,26 @@ export default class ArcadiaHubPlugin extends Plugin {
 
 		// Add ribbon icon
 		this.addRibbonIcon("git-branch", "Open Arcadia Hub", () => {
-			this.activateView();
+			void this.activateView();
 		});
 
 		// Register commands
 		this.addCommand({
 			id: "open-hub",
 			name: "Open Hub",
-			callback: () => this.activateView(),
+			callback: () => { void this.activateView(); },
 		});
 
 		this.addCommand({
 			id: "view-github-issues",
 			name: "View GitHub Issues",
-			callback: () => this.activateView("issues"),
+			callback: () => { void this.activateView("issues"); },
 		});
 
 		this.addCommand({
 			id: "view-pull-requests",
 			name: "View Pull Requests",
-			callback: () => this.activateView("prs"),
+			callback: () => { void this.activateView("prs"); },
 		});
 
 		this.addCommand({
@@ -69,7 +69,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 		this.setupAutoRefresh();
 	}
 
-	async onunload(): Promise<void> {
+	onunload(): void {
 		if (this.refreshInterval !== null) {
 			window.clearInterval(this.refreshInterval);
 		}
@@ -145,7 +145,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 		const minutes = this.settings.autoRefreshMinutes;
 		if (minutes > 0) {
 			this.refreshInterval = window.setInterval(
-				() => this.refreshHubView(),
+				() => { void this.refreshHubView(); },
 				minutes * 60 * 1000
 			);
 			this.registerInterval(this.refreshInterval);

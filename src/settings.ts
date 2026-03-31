@@ -14,13 +14,13 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl("h1", { text: "Arcadia Hub" });
+		new Setting(containerEl).setName('Arcadia Hub').setHeading();
 
 		// --- GitHub Section ---
-		containerEl.createEl("h2", { text: "GitHub Integration" });
+		new Setting(containerEl).setName('GitHub integration').setHeading();
 
 		new Setting(containerEl)
-			.setName("Personal Access Token")
+			.setName("Personal access token")
 			.setDesc("GitHub PAT with repo scope. Generate at GitHub > Settings > Developer settings > Personal access tokens.")
 			.addText((text) =>
 				text
@@ -91,7 +91,7 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 			);
 
 		// --- License Section ---
-		containerEl.createEl("h2", { text: "License" });
+		new Setting(containerEl).setName('License').setHeading();
 
 		const licenseStatus = this.plugin.settings.licenseStatus;
 		const isPro = this.plugin.settings.isPro && licenseStatus?.valid;
@@ -149,7 +149,7 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 			);
 
 		// --- Future Modules ---
-		containerEl.createEl("h2", { text: "Additional Modules" });
+		new Setting(containerEl).setName('Additional modules').setHeading();
 
 		new Setting(containerEl)
 			.setName("Claude Code Bridge")
