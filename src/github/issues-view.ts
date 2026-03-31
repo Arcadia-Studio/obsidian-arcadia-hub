@@ -47,12 +47,12 @@ export class IssuesView {
 		openBtn.addEventListener("click", () => {
 			this.showClosed = false;
 			this.currentPage = 1;
-			this.loadAndRender();
+			void this.loadAndRender();
 		});
 		closedBtn.addEventListener("click", () => {
 			this.showClosed = true;
 			this.currentPage = 1;
-			this.loadAndRender();
+			void this.loadAndRender();
 		});
 
 		const labelInput = filterBar.createEl("input", {
@@ -200,7 +200,8 @@ export class IssuesView {
 			if (this.expandedIssue === issue.number) {
 				const body = item.createDiv({ cls: "arcadia-hub-issue-body" });
 				if (issue.body) {
-					MarkdownRenderer.renderMarkdown(
+					void MarkdownRenderer.render(
+						this.plugin.app,
 						issue.body,
 						body,
 						"",
@@ -233,7 +234,7 @@ export class IssuesView {
 				});
 				prev.addEventListener("click", () => {
 					this.currentPage--;
-					this.loadAndRender();
+					void this.loadAndRender();
 				});
 			}
 			const next = pagination.createEl("button", {
@@ -242,7 +243,7 @@ export class IssuesView {
 			});
 			next.addEventListener("click", () => {
 				this.currentPage++;
-				this.loadAndRender();
+				void this.loadAndRender();
 			});
 		}
 	}

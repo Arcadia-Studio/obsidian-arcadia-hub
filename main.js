@@ -511,12 +511,12 @@ var IssuesView = class {
     openBtn.addEventListener("click", () => {
       this.showClosed = false;
       this.currentPage = 1;
-      this.loadAndRender();
+      void this.loadAndRender();
     });
     closedBtn.addEventListener("click", () => {
       this.showClosed = true;
       this.currentPage = 1;
-      this.loadAndRender();
+      void this.loadAndRender();
     });
     const labelInput = filterBar.createEl("input", {
       type: "text",
@@ -639,7 +639,8 @@ var IssuesView = class {
       if (this.expandedIssue === issue.number) {
         const body = item.createDiv({ cls: "arcadia-hub-issue-body" });
         if (issue.body) {
-          import_obsidian4.MarkdownRenderer.renderMarkdown(
+          void import_obsidian4.MarkdownRenderer.render(
+            this.plugin.app,
             issue.body,
             body,
             "",
@@ -669,7 +670,7 @@ var IssuesView = class {
         });
         prev.addEventListener("click", () => {
           this.currentPage--;
-          this.loadAndRender();
+          void this.loadAndRender();
         });
       }
       const next = pagination.createEl("button", {
@@ -678,7 +679,7 @@ var IssuesView = class {
       });
       next.addEventListener("click", () => {
         this.currentPage++;
-        this.loadAndRender();
+        void this.loadAndRender();
       });
     }
   }
@@ -1008,8 +1009,10 @@ var HubView = class extends import_obsidian5.ItemView {
       cls: "arcadia-hub-refresh-btn clickable-icon",
       attr: { "aria-label": "Refresh" }
     });
-    refreshBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`;
-    refreshBtn.addEventListener("click", () => this.refresh());
+    (0, import_obsidian5.setIcon)(refreshBtn, "refresh-cw");
+    refreshBtn.addEventListener("click", () => {
+      void this.refresh();
+    });
     const repoDisplay = header.createDiv({ cls: "arcadia-hub-active-repo" });
     const activeRepo = this.plugin.getActiveRepo();
     if (activeRepo) {
@@ -1031,7 +1034,7 @@ var HubView = class extends import_obsidian5.ItemView {
       });
       tabBtn.addEventListener("click", () => {
         this.activeTab = tab.value;
-        this.renderActiveTab();
+        void this.renderActiveTab();
         tabBar.querySelectorAll(".arcadia-hub-tab").forEach(
           (t) => t.removeClass("is-active")
         );
@@ -1087,7 +1090,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("arcadia-hub-create-issue-modal");
-    contentEl.createEl("h2", { text: "Create GitHub Issue" });
+    contentEl.createEl("h2", { text: "Create GitHub issue" });
     const repo = this.plugin.getActiveRepo();
     if (!repo) {
       contentEl.createEl("p", {
@@ -1153,7 +1156,9 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
       text: "Create Issue",
       cls: "arcadia-hub-btn arcadia-hub-btn-primary"
     });
-    createBtn.addEventListener("click", () => this.createIssue());
+    createBtn.addEventListener("click", () => {
+      void this.createIssue();
+    });
     const cancelBtn = btnContainer.createEl("button", {
       text: "Cancel",
       cls: "arcadia-hub-btn"
@@ -1177,7 +1182,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
       );
       new import_obsidian6.Notice(`Issue #${issue.number} created successfully.`);
       this.close();
-      this.plugin.refreshHubView();
+      void this.plugin.refreshHubView();
     } catch (err) {
       new import_obsidian6.Notice(`Failed to create issue: ${err.message}`);
     }

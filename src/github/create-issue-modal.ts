@@ -21,7 +21,7 @@ export class CreateIssueModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("arcadia-hub-create-issue-modal");
 
-		contentEl.createEl("h2", { text: "Create GitHub Issue" });
+		contentEl.createEl("h2", { text: "Create GitHub issue" });
 
 		const repo = this.plugin.getActiveRepo();
 		if (!repo) {
@@ -106,7 +106,7 @@ export class CreateIssueModal extends Modal {
 			text: "Create Issue",
 			cls: "arcadia-hub-btn arcadia-hub-btn-primary",
 		});
-		createBtn.addEventListener("click", () => this.createIssue());
+		createBtn.addEventListener("click", () => { void this.createIssue(); });
 
 		const cancelBtn = btnContainer.createEl("button", {
 			text: "Cancel",
@@ -136,7 +136,7 @@ export class CreateIssueModal extends Modal {
 			this.close();
 
 			// Refresh the hub view
-			this.plugin.refreshHubView();
+			void this.plugin.refreshHubView();
 		} catch (err) {
 			new Notice(`Failed to create issue: ${(err as Error).message}`);
 		}
