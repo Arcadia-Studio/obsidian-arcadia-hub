@@ -67,7 +67,7 @@ export class ReposView {
 
 			if (isActive) {
 				header.createEl("span", {
-					text: "active",
+					text: "Active",
 					cls: "arcadia-hub-repo-active-badge",
 				});
 			}

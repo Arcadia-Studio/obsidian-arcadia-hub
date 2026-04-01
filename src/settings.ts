@@ -19,10 +19,10 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Personal access token")
-			.setDesc("GitHub PAT with repo scope. Generate at GitHub > Settings > Developer settings > Personal access tokens.")
+			.setDesc("GitHub token with repo scope")
 			.addText((text) =>
 				text
-					.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx")
+					.setPlaceholder("Ghp_xxxxxxxxxxxxxxxxxxxx")
 					.setValue(this.plugin.settings.githubToken)
 					.onChange((value) => {
 						this.plugin.settings.githubToken = value.trim();
@@ -36,7 +36,7 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 			.setDesc("Format: owner/repo (e.g. octocat/hello-world)")
 			.addText((text) =>
 				text
-					.setPlaceholder("owner/repo")
+					.setPlaceholder("Owner/repo")
 					.setValue(this.plugin.settings.defaultRepo)
 					.onChange((value) => {
 						this.plugin.settings.defaultRepo = value.trim();
@@ -104,10 +104,10 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("License key")
-			.setDesc("Enter your premium license key from Lemon Squeezy.")
+			.setDesc("Enter your premium license key.")
 			.addText((text) =>
 				text
-					.setPlaceholder("XXXX-XXXX-XXXX-XXXX")
+					.setPlaceholder("Xxxx-xxxx-xxxx-xxxx")
 					.setValue(this.plugin.settings.licenseKey)
 					.onChange((value) => {
 						this.plugin.settings.licenseKey = value.trim();
@@ -151,8 +151,8 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('Additional modules').setHeading();
 
 		new Setting(containerEl)
-			.setName("Claude Code bridge")
-			.setDesc("Coming soon: MCP server integration, session history, CLAUDE.md editor.")
+			.setName("Claude code bridge")
+			.setDesc("Coming soon: server integration, session history, config editor.")
 			.setDisabled(true);
 
 		new Setting(containerEl)
@@ -162,7 +162,7 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("AI router")
-			.setDesc("Coming soon: route content to Claude, NotebookLM, or local LLMs from context menu.")
+			.setDesc("Coming soon: route content to AI providers from context menu.")
 			.setDisabled(true);
 	}
 }

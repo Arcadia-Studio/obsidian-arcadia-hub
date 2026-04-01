@@ -67,7 +67,7 @@ export class IssuesView {
 		});
 
 		const newIssueBtn = filterBar.createEl("button", {
-			text: "+ New issue",
+			text: "+ new issue",
 			cls: "arcadia-hub-btn arcadia-hub-btn-primary",
 		});
 		newIssueBtn.addEventListener("click", () => {

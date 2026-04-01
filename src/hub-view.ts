@@ -25,7 +25,7 @@ export class HubView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Arcadia Hub";
+		return "Arcadia hub";
 	}
 
 	getIcon(): string {
@@ -42,7 +42,7 @@ export class HubView extends ItemView {
 
 		const titleRow = header.createDiv({ cls: "arcadia-hub-title-row" });
 
-		titleRow.createEl("h3", { text: "Arcadia Hub", cls: "arcadia-hub-title" });
+		titleRow.createEl("h3", { text: "Arcadia hub", cls: "arcadia-hub-title" });
 
 		// Connection status
 		const statusDot = titleRow.createEl("span", {

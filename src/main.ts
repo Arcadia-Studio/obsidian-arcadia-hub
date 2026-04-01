@@ -25,7 +25,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 		this.addSettingTab(new ArcadiaHubSettingTab(this.app, this));
 
 		// Add ribbon icon
-		this.addRibbonIcon("git-branch", "Open Arcadia Hub", () => {
+		this.addRibbonIcon("git-branch", "Open arcadia hub", () => {
 			void this.activateView();
 		});
 
