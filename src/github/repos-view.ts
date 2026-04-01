@@ -19,7 +19,7 @@ export class ReposView {
 
 		if (!this.plugin.githubAPI.isConfigured()) {
 			this.containerEl.createEl("p", {
-				text: "GitHub token not configured. Set it in Arcadia Hub settings.",
+				text: "GitHub token not configured. Set it in settings.",
 				cls: "arcadia-hub-empty-state",
 			});
 			return;
@@ -100,7 +100,7 @@ export class ReposView {
 
 			if (!isActive) {
 				const setActiveBtn = actions.createEl("button", {
-					text: "Set Active",
+					text: "Set active",
 					cls: "arcadia-hub-btn arcadia-hub-btn-small",
 				});
 				setActiveBtn.addEventListener("click", (e) => {

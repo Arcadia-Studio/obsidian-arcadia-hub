@@ -1,9 +1,9 @@
 {
 	"id": "arcadia-hub",
 	"name": "Arcadia Hub",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "0.16.0",
-	"description": "GitHub integration: browse issues, pull requests, and repos directly from your notes. Create issues from note content.",
+	"description": "GitHub integration: browse issues, pull requests, and repos from your notes. Create issues directly from note content.",
 	"author": "Peter J. Carter",
 	"authorUrl": "https://theologyinfocus.org",
 	"isDesktopOnly": true

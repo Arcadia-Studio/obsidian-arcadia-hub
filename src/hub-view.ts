@@ -78,7 +78,7 @@ export class HubView extends ItemView {
 		const tabBar = container.createDiv({ cls: "arcadia-hub-tab-bar" });
 		const tabs: Array<{ label: string; value: HubTab }> = [
 			{ label: "Issues", value: "issues" },
-			{ label: "Pull Requests", value: "prs" },
+			{ label: "Pull requests", value: "prs" },
 			{ label: "Repos", value: "repos" },
 		];
 
@@ -130,10 +130,11 @@ export class HubView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
-		// Cleanup
+		// Cleanup - no async operations needed
 		this.issuesView = null;
 		this.prView = null;
 		this.reposView = null;
 		this.contentArea = null;
+		await Promise.resolve();
 	}
 }

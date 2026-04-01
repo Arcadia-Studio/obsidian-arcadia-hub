@@ -52,7 +52,7 @@ export class GitHubAPI {
 		body?: unknown
 	): Promise<T> {
 		if (!this.token) {
-			throw new Error("GitHub token not configured. Set it in Arcadia Hub settings.");
+			throw new Error("GitHub token not configured. Set it in settings.");
 		}
 
 		const params: RequestUrlParam = {
@@ -78,7 +78,7 @@ export class GitHubAPI {
 				this.rateLimitRemaining = parseInt(String(remaining), 10);
 				if (this.rateLimitRemaining < 10) {
 					new Notice(
-						`Arcadia Hub: GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
+						`GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
 					);
 				}
 			}
@@ -88,7 +88,7 @@ export class GitHubAPI {
 			const error = err as { status?: number; message?: string };
 			if (error.status === 401) {
 				throw new Error(
-					"GitHub authentication failed. Check your Personal Access Token in settings."
+					"GitHub authentication failed. Check your personal access token in settings."
 				);
 			}
 			if (error.status === 403) {

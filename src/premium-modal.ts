@@ -21,11 +21,11 @@ export class PremiumModal extends Modal {
 		this.featureName = featureName;
 	}
 
-	onOpen() {
+	onOpen(): void {
 		const { contentEl } = this;
-		contentEl.createEl('h2', { text: 'Arcadia Hub premium' });
+		new Setting(contentEl).setName('Premium feature').setHeading();
 		contentEl.createEl('p', {
-			text: `"${this.featureName}" is part of Arcadia Hub Premium.`,
+			text: `"${this.featureName}" is a premium feature.`,
 		});
 		contentEl.createEl('p', {
 			text: 'Purchase a license to unlock all premium features, or enter your existing license key below.',
@@ -39,16 +39,17 @@ export class PremiumModal extends Modal {
 				this.textInputEl = text.inputEl;
 				text
 					.setPlaceholder('XXXX-XXXX-XXXX-XXXX')
-					.onChange(async (value) => {
+					.onChange((value) => {
 						if (value.trim().length > 10) {
-							const status = await validateLicense(value.trim());
-							if (status.valid) {
-								this.plugin.settings.licenseKey = value.trim();
-								this.plugin.settings.licenseStatus = status;
-								this.plugin.settings.isPro = true;
-								await this.plugin.saveSettings();
-								this.close();
-							}
+							void validateLicense(value.trim()).then((status) => {
+								if (status.valid) {
+									this.plugin.settings.licenseKey = value.trim();
+									this.plugin.settings.licenseStatus = status;
+									this.plugin.settings.isPro = true;
+									void this.plugin.saveSettings();
+									this.close();
+								}
+							});
 						}
 					});
 			});
@@ -71,7 +72,7 @@ export class PremiumModal extends Modal {
 			);
 	}
 
-	onClose() {
+	onClose(): void {
 		this.contentEl.empty();
 	}
 }

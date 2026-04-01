@@ -45,7 +45,7 @@ export class PRView {
 			});
 			btn.addEventListener("click", () => {
 				this.showState = s.value;
-				this.loadAndRender();
+				void this.loadAndRender();
 			});
 		}
 
@@ -159,7 +159,7 @@ export class PRView {
 
 				details.createDiv({
 					cls: "arcadia-hub-pr-branch-info",
-					text: `Branch: ${pr.branch} → ${pr.baseBranch}`,
+					text: `Branch: ${pr.branch} \u2192 ${pr.baseBranch}`,
 				});
 
 				details.createDiv({

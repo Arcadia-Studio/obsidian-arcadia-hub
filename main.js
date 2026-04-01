@@ -85,86 +85,87 @@ var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian2.Setting(containerEl).setName("Arcadia Hub").setHeading();
+    new import_obsidian2.Setting(containerEl).setName("General").setHeading();
     new import_obsidian2.Setting(containerEl).setName("GitHub integration").setHeading();
     new import_obsidian2.Setting(containerEl).setName("Personal access token").setDesc("GitHub PAT with repo scope. Generate at GitHub > Settings > Developer settings > Personal access tokens.").addText(
-      (text) => text.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx").setValue(this.plugin.settings.githubToken).onChange(async (value) => {
+      (text) => text.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx").setValue(this.plugin.settings.githubToken).onChange((value) => {
         this.plugin.settings.githubToken = value.trim();
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       }).inputEl.type = "password"
     );
     new import_obsidian2.Setting(containerEl).setName("Default repository").setDesc("Format: owner/repo (e.g. octocat/hello-world)").addText(
-      (text) => text.setPlaceholder("owner/repo").setValue(this.plugin.settings.defaultRepo).onChange(async (value) => {
+      (text) => text.setPlaceholder("owner/repo").setValue(this.plugin.settings.defaultRepo).onChange((value) => {
         this.plugin.settings.defaultRepo = value.trim();
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     );
     new import_obsidian2.Setting(containerEl).setName("Show closed issues").setDesc("Include closed issues in the issues list").addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.showClosedIssues).onChange(async (value) => {
+      (toggle) => toggle.setValue(this.plugin.settings.showClosedIssues).onChange((value) => {
         this.plugin.settings.showClosedIssues = value;
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     );
     new import_obsidian2.Setting(containerEl).setName("Issues per page").setDesc("Number of issues to load per page (1-100)").addText(
-      (text) => text.setPlaceholder("25").setValue(String(this.plugin.settings.issuesPerPage)).onChange(async (value) => {
+      (text) => text.setPlaceholder("25").setValue(String(this.plugin.settings.issuesPerPage)).onChange((value) => {
         const num = parseInt(value, 10);
         if (!isNaN(num) && num >= 1 && num <= 100) {
           this.plugin.settings.issuesPerPage = num;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         }
       })
     );
     new import_obsidian2.Setting(containerEl).setName("Auto-refresh interval").setDesc("Minutes between automatic refreshes. Set to 0 for manual refresh only.").addText(
-      (text) => text.setPlaceholder("0").setValue(String(this.plugin.settings.autoRefreshMinutes)).onChange(async (value) => {
+      (text) => text.setPlaceholder("0").setValue(String(this.plugin.settings.autoRefreshMinutes)).onChange((value) => {
         const num = parseInt(value, 10);
         if (!isNaN(num) && num >= 0) {
           this.plugin.settings.autoRefreshMinutes = num;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         }
       })
     );
     new import_obsidian2.Setting(containerEl).setName("License").setHeading();
     const licenseStatus = this.plugin.settings.licenseStatus;
     const isPro = this.plugin.settings.isPro && (licenseStatus == null ? void 0 : licenseStatus.valid);
-    const statusDesc = isPro ? `Active${(licenseStatus == null ? void 0 : licenseStatus.customerEmail) ? ` (${licenseStatus.customerEmail})` : ""}${(licenseStatus == null ? void 0 : licenseStatus.expiresAt) ? ` - expires ${licenseStatus.expiresAt}` : ""}` : "No active license. Enter your license key and click Validate.";
+    const statusDesc = isPro ? `active${(licenseStatus == null ? void 0 : licenseStatus.customerEmail) ? ` (${licenseStatus.customerEmail})` : ""}${(licenseStatus == null ? void 0 : licenseStatus.expiresAt) ? ` - expires ${licenseStatus.expiresAt}` : ""}` : "No active license. Enter your license key and click validate.";
     const licenseStatusEl = containerEl.createEl("p", {
       text: `License status: ${statusDesc}`,
       cls: isPro ? "mod-success" : "mod-warning"
     });
-    new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your Arcadia Hub Premium license key from Lemon Squeezy.").addText(
-      (text) => text.setPlaceholder("XXXX-XXXX-XXXX-XXXX").setValue(this.plugin.settings.licenseKey).onChange(async (value) => {
+    new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your premium license key from Lemon Squeezy.").addText(
+      (text) => text.setPlaceholder("XXXX-XXXX-XXXX-XXXX").setValue(this.plugin.settings.licenseKey).onChange((value) => {
         this.plugin.settings.licenseKey = value.trim();
-        await this.plugin.saveSettings();
+        void this.plugin.saveSettings();
       })
     ).addButton(
-      (btn) => btn.setButtonText("Validate").setCta().onClick(async () => {
+      (btn) => btn.setButtonText("Validate").setCta().onClick(() => {
         const key = this.plugin.settings.licenseKey.trim();
         if (!key)
           return;
         btn.setButtonText("Checking...").setDisabled(true);
-        const status = await validateLicense(key);
-        this.plugin.settings.licenseStatus = status;
-        this.plugin.settings.isPro = status.valid;
-        await this.plugin.saveSettings();
-        btn.setButtonText("Validate").setDisabled(false);
-        if (status.valid) {
-          licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
-          licenseStatusEl.className = "mod-success";
-        } else {
-          licenseStatusEl.textContent = "License status: Invalid or expired. Check your key and try again.";
-          licenseStatusEl.className = "mod-warning";
-        }
+        void validateLicense(key).then((status) => {
+          this.plugin.settings.licenseStatus = status;
+          this.plugin.settings.isPro = status.valid;
+          void this.plugin.saveSettings();
+          btn.setButtonText("Validate").setDisabled(false);
+          if (status.valid) {
+            licenseStatusEl.textContent = `License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+            licenseStatusEl.className = "mod-success";
+          } else {
+            licenseStatusEl.textContent = "License status: invalid or expired. Check your key and try again.";
+            licenseStatusEl.className = "mod-warning";
+          }
+        });
       })
     );
     new import_obsidian2.Setting(containerEl).addButton(
-      (btn) => btn.setButtonText("Get Arcadia Hub Premium").onClick(() => {
+      (btn) => btn.setButtonText("Get premium").onClick(() => {
         window.open("https://arcadia-studio.lemonsqueezy.com", "_blank");
       })
     );
     new import_obsidian2.Setting(containerEl).setName("Additional modules").setHeading();
-    new import_obsidian2.Setting(containerEl).setName("Claude Code Bridge").setDesc("Coming Soon: MCP server integration, session history, CLAUDE.md editor.").setDisabled(true);
-    new import_obsidian2.Setting(containerEl).setName("NotebookLM Sync").setDesc("Coming Soon: Push notes to NotebookLM, pull audio overviews back into your vault.").setDisabled(true);
-    new import_obsidian2.Setting(containerEl).setName("AI Router").setDesc("Coming Soon: Route content to Claude, NotebookLM, or local LLMs from context menu.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("Claude Code bridge").setDesc("Coming soon: MCP server integration, session history, CLAUDE.md editor.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("NotebookLM sync").setDesc("Coming soon: push notes to NotebookLM, pull audio overviews back into your vault.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("AI router").setDesc("Coming soon: route content to Claude, NotebookLM, or local LLMs from context menu.").setDisabled(true);
   }
 };
 
@@ -203,7 +204,7 @@ var GitHubAPI = class {
   }
   async request(path, method = "GET", body) {
     if (!this.token) {
-      throw new Error("GitHub token not configured. Set it in Arcadia Hub settings.");
+      throw new Error("GitHub token not configured. Set it in settings.");
     }
     const params = {
       url: `${GITHUB_API}${path}`,
@@ -224,7 +225,7 @@ var GitHubAPI = class {
         this.rateLimitRemaining = parseInt(String(remaining), 10);
         if (this.rateLimitRemaining < 10) {
           new import_obsidian3.Notice(
-            `Arcadia Hub: GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
+            `GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
           );
         }
       }
@@ -233,7 +234,7 @@ var GitHubAPI = class {
       const error = err;
       if (error.status === 401) {
         throw new Error(
-          "GitHub authentication failed. Check your Personal Access Token in settings."
+          "GitHub authentication failed. Check your personal access token in settings."
         );
       }
       if (error.status === 403) {
@@ -529,7 +530,7 @@ var IssuesView = class {
       this.renderIssueList();
     });
     const newIssueBtn = filterBar.createEl("button", {
-      text: "+ New Issue",
+      text: "+ New issue",
       cls: "arcadia-hub-btn arcadia-hub-btn-primary"
     });
     newIssueBtn.addEventListener("click", () => {
@@ -595,11 +596,11 @@ var IssuesView = class {
     for (const issue of filtered) {
       const item = listEl.createDiv({ cls: "arcadia-hub-issue-item" });
       const header = item.createDiv({ cls: "arcadia-hub-issue-header" });
-      const number = header.createEl("span", {
+      header.createEl("span", {
         text: `#${issue.number}`,
         cls: "arcadia-hub-issue-number"
       });
-      const title = header.createEl("span", {
+      header.createEl("span", {
         text: issue.title,
         cls: "arcadia-hub-issue-title"
       });
@@ -739,7 +740,7 @@ var PRView = class {
       });
       btn.addEventListener("click", () => {
         this.showState = s.value;
-        this.loadAndRender();
+        void this.loadAndRender();
       });
     }
     this.containerEl.createDiv({ cls: "arcadia-hub-pr-list" });
@@ -880,7 +881,7 @@ var ReposView = class {
     this.containerEl.empty();
     if (!this.plugin.githubAPI.isConfigured()) {
       this.containerEl.createEl("p", {
-        text: "GitHub token not configured. Set it in Arcadia Hub settings.",
+        text: "GitHub token not configured. Set it in settings.",
         cls: "arcadia-hub-empty-state"
       });
       return;
@@ -945,7 +946,7 @@ var ReposView = class {
       const actions = item.createDiv({ cls: "arcadia-hub-repo-actions" });
       if (!isActive) {
         const setActiveBtn = actions.createEl("button", {
-          text: "Set Active",
+          text: "Set active",
           cls: "arcadia-hub-btn arcadia-hub-btn-small"
         });
         setActiveBtn.addEventListener("click", (e) => {
@@ -1024,7 +1025,7 @@ var HubView = class extends import_obsidian5.ItemView {
     const tabBar = container.createDiv({ cls: "arcadia-hub-tab-bar" });
     const tabs = [
       { label: "Issues", value: "issues" },
-      { label: "Pull Requests", value: "prs" },
+      { label: "Pull requests", value: "prs" },
       { label: "Repos", value: "repos" }
     ];
     for (const tab of tabs) {
@@ -1072,6 +1073,7 @@ var HubView = class extends import_obsidian5.ItemView {
     this.prView = null;
     this.reposView = null;
     this.contentArea = null;
+    await Promise.resolve();
   }
 };
 
@@ -1090,7 +1092,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("arcadia-hub-create-issue-modal");
-    contentEl.createEl("h2", { text: "Create GitHub issue" });
+    new import_obsidian6.Setting(contentEl).setName("Create GitHub issue").setHeading();
     const repo = this.plugin.getActiveRepo();
     if (!repo) {
       contentEl.createEl("p", {
@@ -1118,7 +1120,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
       this.bodyValue = textArea.value;
     });
     const labelsContainer = contentEl.createDiv({ cls: "arcadia-hub-labels-section" });
-    labelsContainer.createEl("h3", { text: "Labels" });
+    new import_obsidian6.Setting(labelsContainer).setName("Labels").setHeading();
     try {
       this.availableLabels = await this.plugin.githubAPI.getLabels(repo);
       const labelGrid = labelsContainer.createDiv({ cls: "arcadia-hub-label-grid" });
@@ -1153,7 +1155,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     }
     const btnContainer = contentEl.createDiv({ cls: "arcadia-hub-modal-buttons" });
     const createBtn = btnContainer.createEl("button", {
-      text: "Create Issue",
+      text: "Create issue",
       cls: "arcadia-hub-btn arcadia-hub-btn-primary"
     });
     createBtn.addEventListener("click", () => {
@@ -1219,28 +1221,28 @@ var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
     });
     this.addCommand({
       id: "open-hub",
-      name: "Open Hub",
+      name: "Open hub",
       callback: () => {
         void this.activateView();
       }
     });
     this.addCommand({
       id: "view-github-issues",
-      name: "View GitHub Issues",
+      name: "View GitHub issues",
       callback: () => {
         void this.activateView("issues");
       }
     });
     this.addCommand({
       id: "view-pull-requests",
-      name: "View Pull Requests",
+      name: "View pull requests",
       callback: () => {
         void this.activateView("prs");
       }
     });
     this.addCommand({
       id: "create-issue-from-note",
-      name: "Create Issue from Note",
+      name: "Create issue from note",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView);
         if (!view)

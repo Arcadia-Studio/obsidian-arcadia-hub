@@ -1,4 +1,4 @@
-import { Notice, MarkdownRenderer, Component } from "obsidian";
+import { MarkdownRenderer, Component } from "obsidian";
 import type ArcadiaHubPlugin from "../main";
 import { GitHubIssue } from "../types";
 
@@ -67,7 +67,7 @@ export class IssuesView {
 		});
 
 		const newIssueBtn = filterBar.createEl("button", {
-			text: "+ New Issue",
+			text: "+ New issue",
 			cls: "arcadia-hub-btn arcadia-hub-btn-primary",
 		});
 		newIssueBtn.addEventListener("click", () => {
@@ -144,12 +144,12 @@ export class IssuesView {
 
 			const header = item.createDiv({ cls: "arcadia-hub-issue-header" });
 
-			const number = header.createEl("span", {
+			header.createEl("span", {
 				text: `#${issue.number}`,
 				cls: "arcadia-hub-issue-number",
 			});
 
-			const title = header.createEl("span", {
+			header.createEl("span", {
 				text: issue.title,
 				cls: "arcadia-hub-issue-title",
 			});

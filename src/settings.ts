@@ -14,7 +14,7 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		new Setting(containerEl).setName('Arcadia Hub').setHeading();
+		new Setting(containerEl).setName('General').setHeading();
 
 		// --- GitHub Section ---
 		new Setting(containerEl).setName('GitHub integration').setHeading();
@@ -26,9 +26,9 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx")
 					.setValue(this.plugin.settings.githubToken)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.githubToken = value.trim();
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 					})
 					.inputEl.type = "password"
 			);
@@ -40,9 +40,9 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("owner/repo")
 					.setValue(this.plugin.settings.defaultRepo)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.defaultRepo = value.trim();
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 					})
 			);
 
@@ -52,9 +52,9 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.showClosedIssues)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.showClosedIssues = value;
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 					})
 			);
 
@@ -65,11 +65,11 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("25")
 					.setValue(String(this.plugin.settings.issuesPerPage))
-					.onChange(async (value) => {
+					.onChange((value) => {
 						const num = parseInt(value, 10);
 						if (!isNaN(num) && num >= 1 && num <= 100) {
 							this.plugin.settings.issuesPerPage = num;
-							await this.plugin.saveSettings();
+							void this.plugin.saveSettings();
 						}
 					})
 			);
@@ -81,11 +81,11 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 				text
 					.setPlaceholder("0")
 					.setValue(String(this.plugin.settings.autoRefreshMinutes))
-					.onChange(async (value) => {
+					.onChange((value) => {
 						const num = parseInt(value, 10);
 						if (!isNaN(num) && num >= 0) {
 							this.plugin.settings.autoRefreshMinutes = num;
-							await this.plugin.saveSettings();
+							void this.plugin.saveSettings();
 						}
 					})
 			);
@@ -96,8 +96,8 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		const licenseStatus = this.plugin.settings.licenseStatus;
 		const isPro = this.plugin.settings.isPro && licenseStatus?.valid;
 		const statusDesc = isPro
-			? `Active${licenseStatus?.customerEmail ? ` (${licenseStatus.customerEmail})` : ""}${licenseStatus?.expiresAt ? ` - expires ${licenseStatus.expiresAt}` : ""}`
-			: "No active license. Enter your license key and click Validate.";
+			? `active${licenseStatus?.customerEmail ? ` (${licenseStatus.customerEmail})` : ""}${licenseStatus?.expiresAt ? ` - expires ${licenseStatus.expiresAt}` : ""}`
+			: "No active license. Enter your license key and click validate.";
 
 		const licenseStatusEl = containerEl.createEl("p", {
 			text: `License status: ${statusDesc}`,
@@ -106,43 +106,44 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("License key")
-			.setDesc("Enter your Arcadia Hub Premium license key from Lemon Squeezy.")
+			.setDesc("Enter your premium license key from Lemon Squeezy.")
 			.addText((text) =>
 				text
 					.setPlaceholder("XXXX-XXXX-XXXX-XXXX")
 					.setValue(this.plugin.settings.licenseKey)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.licenseKey = value.trim();
-						await this.plugin.saveSettings();
+						void this.plugin.saveSettings();
 					})
 			)
 			.addButton((btn) =>
 				btn
 					.setButtonText("Validate")
 					.setCta()
-					.onClick(async () => {
+					.onClick(() => {
 						const key = this.plugin.settings.licenseKey.trim();
 						if (!key) return;
 						btn.setButtonText("Checking...").setDisabled(true);
-						const status = await validateLicense(key);
-						this.plugin.settings.licenseStatus = status;
-						this.plugin.settings.isPro = status.valid;
-						await this.plugin.saveSettings();
-						btn.setButtonText("Validate").setDisabled(false);
-						if (status.valid) {
-							licenseStatusEl.textContent = `License status: Active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
-							licenseStatusEl.className = "mod-success";
-						} else {
-							licenseStatusEl.textContent = "License status: Invalid or expired. Check your key and try again.";
-							licenseStatusEl.className = "mod-warning";
-						}
+						void validateLicense(key).then((status) => {
+							this.plugin.settings.licenseStatus = status;
+							this.plugin.settings.isPro = status.valid;
+							void this.plugin.saveSettings();
+							btn.setButtonText("Validate").setDisabled(false);
+							if (status.valid) {
+								licenseStatusEl.textContent = `License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+								licenseStatusEl.className = "mod-success";
+							} else {
+								licenseStatusEl.textContent = "License status: invalid or expired. Check your key and try again.";
+								licenseStatusEl.className = "mod-warning";
+							}
+						});
 					})
 			);
 
 		new Setting(containerEl)
 			.addButton((btn) =>
 				btn
-					.setButtonText("Get Arcadia Hub Premium")
+					.setButtonText("Get premium")
 					.onClick(() => {
 						window.open("https://arcadia-studio.lemonsqueezy.com", "_blank");
 					})
@@ -152,18 +153,18 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('Additional modules').setHeading();
 
 		new Setting(containerEl)
-			.setName("Claude Code Bridge")
-			.setDesc("Coming Soon: MCP server integration, session history, CLAUDE.md editor.")
+			.setName("Claude Code bridge")
+			.setDesc("Coming soon: MCP server integration, session history, CLAUDE.md editor.")
 			.setDisabled(true);
 
 		new Setting(containerEl)
-			.setName("NotebookLM Sync")
-			.setDesc("Coming Soon: Push notes to NotebookLM, pull audio overviews back into your vault.")
+			.setName("NotebookLM sync")
+			.setDesc("Coming soon: push notes to NotebookLM, pull audio overviews back into your vault.")
 			.setDisabled(true);
 
 		new Setting(containerEl)
-			.setName("AI Router")
-			.setDesc("Coming Soon: Route content to Claude, NotebookLM, or local LLMs from context menu.")
+			.setName("AI router")
+			.setDesc("Coming soon: route content to Claude, NotebookLM, or local LLMs from context menu.")
 			.setDisabled(true);
 	}
 }

@@ -21,7 +21,7 @@ export class CreateIssueModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("arcadia-hub-create-issue-modal");
 
-		contentEl.createEl("h2", { text: "Create GitHub issue" });
+		new Setting(contentEl).setName("Create GitHub issue").setHeading();
 
 		const repo = this.plugin.getActiveRepo();
 		if (!repo) {
@@ -62,7 +62,7 @@ export class CreateIssueModal extends Modal {
 
 		// Labels
 		const labelsContainer = contentEl.createDiv({ cls: "arcadia-hub-labels-section" });
-		labelsContainer.createEl("h3", { text: "Labels" });
+		new Setting(labelsContainer).setName("Labels").setHeading();
 
 		try {
 			this.availableLabels = await this.plugin.githubAPI.getLabels(repo);
@@ -103,7 +103,7 @@ export class CreateIssueModal extends Modal {
 		const btnContainer = contentEl.createDiv({ cls: "arcadia-hub-modal-buttons" });
 
 		const createBtn = btnContainer.createEl("button", {
-			text: "Create Issue",
+			text: "Create issue",
 			cls: "arcadia-hub-btn arcadia-hub-btn-primary",
 		});
 		createBtn.addEventListener("click", () => { void this.createIssue(); });

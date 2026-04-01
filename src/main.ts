@@ -32,25 +32,25 @@ export default class ArcadiaHubPlugin extends Plugin {
 		// Register commands
 		this.addCommand({
 			id: "open-hub",
-			name: "Open Hub",
+			name: "Open hub",
 			callback: () => { void this.activateView(); },
 		});
 
 		this.addCommand({
 			id: "view-github-issues",
-			name: "View GitHub Issues",
+			name: "View GitHub issues",
 			callback: () => { void this.activateView("issues"); },
 		});
 
 		this.addCommand({
 			id: "view-pull-requests",
-			name: "View Pull Requests",
+			name: "View pull requests",
 			callback: () => { void this.activateView("prs"); },
 		});
 
 		this.addCommand({
 			id: "create-issue-from-note",
-			name: "Create Issue from Note",
+			name: "Create issue from note",
 			checkCallback: (checking) => {
 				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 				if (!view) return false;
@@ -110,7 +110,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 	async refreshHubView(): Promise<void> {
 		const leaves = this.app.workspace.getLeavesOfType(HUB_VIEW_TYPE);
 		for (const leaf of leaves) {
-			const view = leaf.view as HubView;
+			const view = leaf.view as unknown as HubView;
 			if (view && view.refresh) {
 				await view.refresh();
 			}
