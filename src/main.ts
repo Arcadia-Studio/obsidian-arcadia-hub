@@ -100,7 +100,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 
 	setActiveRepo(repo: string): void {
 		this.activeRepo = repo;
-		this.refreshHubView();
+		void this.refreshHubView();
 	}
 
 	openCreateIssueModal(title = "", body = ""): void {
@@ -133,7 +133,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 			});
 		}
 
-		this.app.workspace.revealLeaf(leaf);
+		void this.app.workspace.revealLeaf(leaf);
 	}
 
 	private setupAutoRefresh(): void {

@@ -14,8 +14,6 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		new Setting(containerEl).setName('General').setHeading();
-
 		// --- GitHub Section ---
 		new Setting(containerEl).setName('GitHub integration').setHeading();
 
