@@ -163,7 +163,7 @@ var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
     );
     new import_obsidian2.Setting(containerEl).setName("Additional modules").setHeading();
     new import_obsidian2.Setting(containerEl).setName("Claude code bridge").setDesc("Coming soon: server integration, session history, config editor.").setDisabled(true);
-    new import_obsidian2.Setting(containerEl).setName("NotebookLM sync").setDesc("Coming soon: push notes to NotebookLM, pull audio overviews back into your vault.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("Audio notebook sync").setDesc("Coming soon: push notes to generate audio overviews and pull them back into your vault.").setDisabled(true);
     new import_obsidian2.Setting(containerEl).setName("AI router").setDesc("Coming soon: route content to AI providers from context menu.").setDisabled(true);
   }
 };

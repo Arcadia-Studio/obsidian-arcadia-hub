@@ -156,8 +156,8 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 			.setDisabled(true);
 
 		new Setting(containerEl)
-			.setName("NotebookLM sync")
-			.setDesc("Coming soon: push notes to NotebookLM, pull audio overviews back into your vault.")
+			.setName("Audio notebook sync")
+			.setDesc("Coming soon: push notes to generate audio overviews and pull them back into your vault.")
 			.setDisabled(true);
 
 		new Setting(containerEl)
