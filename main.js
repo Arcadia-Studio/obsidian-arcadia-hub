@@ -680,11 +680,11 @@ var IssuesView = class {
     for (const issue of filtered) {
       const item = listEl.createDiv({ cls: "arcadia-hub-issue-item" });
       const header = item.createDiv({ cls: "arcadia-hub-issue-header" });
-      header.createEl("span", {
+      header.createSpan({
         text: `#${issue.number}`,
         cls: "arcadia-hub-issue-number"
       });
-      header.createEl("span", {
+      header.createSpan({
         text: issue.title,
         cls: "arcadia-hub-issue-title"
       });
@@ -698,7 +698,7 @@ var IssuesView = class {
       });
       const meta = item.createDiv({ cls: "arcadia-hub-issue-meta" });
       for (const label of issue.labels) {
-        const badge = meta.createEl("span", {
+        const badge = meta.createSpan({
           text: label.name,
           cls: "arcadia-hub-label"
         });
@@ -707,17 +707,17 @@ var IssuesView = class {
         badge.style.color = brightness > 128 ? "#000" : "#fff";
       }
       if (issue.assignee) {
-        meta.createEl("span", {
+        meta.createSpan({
           text: `@${issue.assignee}`,
           cls: "arcadia-hub-assignee"
         });
       }
-      meta.createEl("span", {
+      meta.createSpan({
         text: `${issue.commentsCount} comments`,
         cls: "arcadia-hub-comments"
       });
       const date = new Date(issue.updatedAt);
-      meta.createEl("span", {
+      meta.createSpan({
         text: this.formatDate(date),
         cls: "arcadia-hub-date"
       });
@@ -876,16 +876,16 @@ var PRView = class {
         cls: `arcadia-hub-pr-item arcadia-hub-pr-${pr.state}`
       });
       const header = item.createDiv({ cls: "arcadia-hub-pr-header" });
-      header.createEl("span", {
+      header.createSpan({
         text: `#${pr.number}`,
         cls: "arcadia-hub-pr-number"
       });
       const stateIcon = pr.state === "merged" ? "merged" : pr.state === "closed" ? "closed" : "open";
-      header.createEl("span", {
+      header.createSpan({
         text: stateIcon,
         cls: `arcadia-hub-pr-state arcadia-hub-pr-state-${pr.state}`
       });
-      header.createEl("span", {
+      header.createSpan({
         text: pr.title,
         cls: "arcadia-hub-pr-title"
       });
@@ -898,22 +898,22 @@ var PRView = class {
         this.renderPRList();
       });
       const meta = item.createDiv({ cls: "arcadia-hub-pr-meta" });
-      meta.createEl("span", {
+      meta.createSpan({
         text: `by ${pr.author}`,
         cls: "arcadia-hub-pr-author"
       });
-      meta.createEl("span", {
+      meta.createSpan({
         text: `${pr.branch} \u2192 ${pr.baseBranch}`,
         cls: "arcadia-hub-pr-branch"
       });
       if (pr.reviewStatus !== "none") {
-        meta.createEl("span", {
+        meta.createSpan({
           text: pr.reviewStatus,
           cls: "arcadia-hub-pr-review"
         });
       }
       const date = new Date(pr.updatedAt);
-      meta.createEl("span", {
+      meta.createSpan({
         text: this.formatDate(date),
         cls: "arcadia-hub-date"
       });
@@ -1001,12 +1001,12 @@ var ReposView = class {
         cls: `arcadia-hub-repo-item ${isActive ? "is-active" : ""}`
       });
       const header = item.createDiv({ cls: "arcadia-hub-repo-header" });
-      header.createEl("span", {
+      header.createSpan({
         text: repo.fullName,
         cls: "arcadia-hub-repo-name"
       });
       if (isActive) {
-        header.createEl("span", {
+        header.createSpan({
           text: "Active",
           cls: "arcadia-hub-repo-active-badge"
         });
@@ -1018,15 +1018,15 @@ var ReposView = class {
         });
       }
       const stats = item.createDiv({ cls: "arcadia-hub-repo-stats" });
-      stats.createEl("span", {
+      stats.createSpan({
         text: `\u2605 ${repo.stars}`,
         cls: "arcadia-hub-repo-stars"
       });
-      stats.createEl("span", {
+      stats.createSpan({
         text: `${repo.openIssues} issues`,
         cls: "arcadia-hub-repo-issues"
       });
-      stats.createEl("span", {
+      stats.createSpan({
         text: repo.defaultBranch,
         cls: "arcadia-hub-repo-branch"
       });
@@ -1083,7 +1083,7 @@ var HubView = class extends import_obsidian5.ItemView {
     const header = container.createDiv({ cls: "arcadia-hub-header" });
     const titleRow = header.createDiv({ cls: "arcadia-hub-title-row" });
     titleRow.createEl("h3", { text: "Arcadia Hub", cls: "arcadia-hub-title" });
-    const statusDot = titleRow.createEl("span", {
+    const statusDot = titleRow.createSpan({
       cls: "arcadia-hub-status-dot"
     });
     if (this.plugin.githubAPI.isConfigured()) {
@@ -1104,7 +1104,7 @@ var HubView = class extends import_obsidian5.ItemView {
     const repoDisplay = header.createDiv({ cls: "arcadia-hub-active-repo" });
     const activeRepo = this.plugin.getActiveRepo();
     if (activeRepo) {
-      repoDisplay.createEl("span", {
+      repoDisplay.createSpan({
         text: activeRepo,
         cls: "arcadia-hub-repo-badge"
       });
@@ -1375,7 +1375,8 @@ var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
     }
   }
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const stored = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, stored);
   }
   async saveSettings() {
     await this.saveData(this.settings);

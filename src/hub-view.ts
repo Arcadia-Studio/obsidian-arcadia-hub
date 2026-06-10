@@ -45,7 +45,7 @@ export class HubView extends ItemView {
 		titleRow.createEl("h3", { text: "Arcadia Hub", cls: "arcadia-hub-title" });
 
 		// Connection status
-		const statusDot = titleRow.createEl("span", {
+		const statusDot = titleRow.createSpan({
 			cls: "arcadia-hub-status-dot",
 		});
 		if (this.plugin.githubAPI.isConfigured()) {
@@ -68,7 +68,7 @@ export class HubView extends ItemView {
 		const repoDisplay = header.createDiv({ cls: "arcadia-hub-active-repo" });
 		const activeRepo = this.plugin.getActiveRepo();
 		if (activeRepo) {
-			repoDisplay.createEl("span", {
+			repoDisplay.createSpan({
 				text: activeRepo,
 				cls: "arcadia-hub-repo-badge",
 			});

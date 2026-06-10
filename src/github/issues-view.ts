@@ -149,12 +149,12 @@ export class IssuesView {
 
 			const header = item.createDiv({ cls: "arcadia-hub-issue-header" });
 
-			header.createEl("span", {
+			header.createSpan({
 				text: `#${issue.number}`,
 				cls: "arcadia-hub-issue-number",
 			});
 
-			header.createEl("span", {
+			header.createSpan({
 				text: issue.title,
 				cls: "arcadia-hub-issue-title",
 			});
@@ -173,7 +173,7 @@ export class IssuesView {
 
 			// Labels
 			for (const label of issue.labels) {
-				const badge = meta.createEl("span", {
+				const badge = meta.createSpan({
 					text: label.name,
 					cls: "arcadia-hub-label",
 				});
@@ -184,19 +184,19 @@ export class IssuesView {
 			}
 
 			if (issue.assignee) {
-				meta.createEl("span", {
+				meta.createSpan({
 					text: `@${issue.assignee}`,
 					cls: "arcadia-hub-assignee",
 				});
 			}
 
-			meta.createEl("span", {
+			meta.createSpan({
 				text: `${issue.commentsCount} comments`,
 				cls: "arcadia-hub-comments",
 			});
 
 			const date = new Date(issue.updatedAt);
-			meta.createEl("span", {
+			meta.createSpan({
 				text: this.formatDate(date),
 				cls: "arcadia-hub-date",
 			});

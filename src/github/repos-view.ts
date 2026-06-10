@@ -60,13 +60,13 @@ export class ReposView {
 
 			const header = item.createDiv({ cls: "arcadia-hub-repo-header" });
 
-			header.createEl("span", {
+			header.createSpan({
 				text: repo.fullName,
 				cls: "arcadia-hub-repo-name",
 			});
 
 			if (isActive) {
-				header.createEl("span", {
+				header.createSpan({
 					text: "Active",
 					cls: "arcadia-hub-repo-active-badge",
 				});
@@ -81,17 +81,17 @@ export class ReposView {
 
 			const stats = item.createDiv({ cls: "arcadia-hub-repo-stats" });
 
-			stats.createEl("span", {
+			stats.createSpan({
 				text: `★ ${repo.stars}`,
 				cls: "arcadia-hub-repo-stars",
 			});
 
-			stats.createEl("span", {
+			stats.createSpan({
 				text: `${repo.openIssues} issues`,
 				cls: "arcadia-hub-repo-issues",
 			});
 
-			stats.createEl("span", {
+			stats.createSpan({
 				text: repo.defaultBranch,
 				cls: "arcadia-hub-repo-branch",
 			});

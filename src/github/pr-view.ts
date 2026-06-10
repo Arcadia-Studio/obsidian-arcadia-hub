@@ -103,18 +103,18 @@ export class PRView {
 
 			const header = item.createDiv({ cls: "arcadia-hub-pr-header" });
 
-			header.createEl("span", {
+			header.createSpan({
 				text: `#${pr.number}`,
 				cls: "arcadia-hub-pr-number",
 			});
 
 			const stateIcon = pr.state === "merged" ? "merged" : pr.state === "closed" ? "closed" : "open";
-			header.createEl("span", {
+			header.createSpan({
 				text: stateIcon,
 				cls: `arcadia-hub-pr-state arcadia-hub-pr-state-${pr.state}`,
 			});
 
-			header.createEl("span", {
+			header.createSpan({
 				text: pr.title,
 				cls: "arcadia-hub-pr-title",
 			});
@@ -130,25 +130,25 @@ export class PRView {
 
 			const meta = item.createDiv({ cls: "arcadia-hub-pr-meta" });
 
-			meta.createEl("span", {
+			meta.createSpan({
 				text: `by ${pr.author}`,
 				cls: "arcadia-hub-pr-author",
 			});
 
-			meta.createEl("span", {
+			meta.createSpan({
 				text: `${pr.branch} → ${pr.baseBranch}`,
 				cls: "arcadia-hub-pr-branch",
 			});
 
 			if (pr.reviewStatus !== "none") {
-				meta.createEl("span", {
+				meta.createSpan({
 					text: pr.reviewStatus,
 					cls: "arcadia-hub-pr-review",
 				});
 			}
 
 			const date = new Date(pr.updatedAt);
-			meta.createEl("span", {
+			meta.createSpan({
 				text: this.formatDate(date),
 				cls: "arcadia-hub-date",
 			});
