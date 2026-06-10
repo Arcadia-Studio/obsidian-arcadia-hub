@@ -25,7 +25,7 @@ export class HubView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Arcadia hub";
+		return "Arcadia Hub";
 	}
 
 	getIcon(): string {
@@ -42,7 +42,7 @@ export class HubView extends ItemView {
 
 		const titleRow = header.createDiv({ cls: "arcadia-hub-title-row" });
 
-		titleRow.createEl("h3", { text: "Arcadia hub", cls: "arcadia-hub-title" });
+		titleRow.createEl("h3", { text: "Arcadia Hub", cls: "arcadia-hub-title" });
 
 		// Connection status
 		const statusDot = titleRow.createEl("span", {
@@ -86,21 +86,26 @@ export class HubView extends ItemView {
 			const tabBtn = tabBar.createEl("button", {
 				text: tab.label,
 				cls: `arcadia-hub-tab ${this.activeTab === tab.value ? "is-active" : ""}`,
+				attr: { "data-tab": tab.value },
 			});
 			tabBtn.addEventListener("click", () => {
-				this.activeTab = tab.value;
-				void this.renderActiveTab();
-				// Update tab active states
-				tabBar.querySelectorAll(".arcadia-hub-tab").forEach((t) =>
-					t.removeClass("is-active")
-				);
-				tabBtn.addClass("is-active");
+				void this.setTab(tab.value);
 			});
 		}
 
 		// Content area
 		this.contentArea = container.createDiv({ cls: "arcadia-hub-content" });
 
+		await this.renderActiveTab();
+	}
+
+	async setTab(tab: HubTab): Promise<void> {
+		this.activeTab = tab;
+		this.containerEl
+			.querySelectorAll<HTMLElement>(".arcadia-hub-tab")
+			.forEach((btn) => {
+				btn.toggleClass("is-active", btn.dataset.tab === tab);
+			});
 		await this.renderActiveTab();
 	}
 

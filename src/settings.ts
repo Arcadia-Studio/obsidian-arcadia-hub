@@ -19,17 +19,18 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Personal access token")
-			.setDesc("GitHub token with repo scope")
-			.addText((text) =>
+			.setDesc("GitHub token with repo scope. Stored locally in this vault's plugin settings.")
+			.addText((text) => {
 				text
-					.setPlaceholder("Ghp_xxxxxxxxxxxxxxxxxxxx")
+					.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx")
 					.setValue(this.plugin.settings.githubToken)
 					.onChange((value) => {
 						this.plugin.settings.githubToken = value.trim();
 						void this.plugin.saveSettings();
-					})
-					.inputEl.type = "password"
-			);
+					});
+				text.inputEl.type = "password";
+				text.inputEl.setAttribute("autocomplete", "off");
+			});
 
 		new Setting(containerEl)
 			.setName("Default repository")
@@ -120,18 +121,31 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 					.setCta()
 					.onClick(() => {
 						const key = this.plugin.settings.licenseKey.trim();
-						if (!key) return;
+						if (!key) {
+							licenseStatusEl.setText("License status: enter a license key first.");
+							return;
+						}
 						btn.setButtonText("Checking...").setDisabled(true);
-						void validateLicense(key).then((status) => {
+						void validateLicense(key).then((result) => {
+							btn.setButtonText("Validate").setDisabled(false);
+							if (result.offline) {
+								// Do not touch the stored status: a previously validated
+								// license keeps working during the offline grace period
+								licenseStatusEl.setText(
+									"License status: could not reach the license server. Check your connection and try again. A previously validated license keeps working for up to 14 days offline."
+								);
+								return;
+							}
+							const status = result.status;
+							if (!status) return;
 							this.plugin.settings.licenseStatus = status;
 							this.plugin.settings.isPro = status.valid;
 							void this.plugin.saveSettings();
-							btn.setButtonText("Validate").setDisabled(false);
 							if (status.valid) {
-								licenseStatusEl.textContent = `License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+								licenseStatusEl.setText(`License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`);
 								licenseStatusEl.className = "mod-success";
 							} else {
-								licenseStatusEl.textContent = "License status: invalid or expired. Check your key and try again.";
+								licenseStatusEl.setText("License status: invalid or expired. Check your key and try again.");
 								licenseStatusEl.className = "mod-warning";
 							}
 						});
@@ -151,7 +165,7 @@ export class ArcadiaHubSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('Additional modules').setHeading();
 
 		new Setting(containerEl)
-			.setName("Claude code bridge")
+			.setName("Claude Code bridge")
 			.setDesc("Coming soon: server integration, session history, config editor.")
 			.setDisabled(true);
 

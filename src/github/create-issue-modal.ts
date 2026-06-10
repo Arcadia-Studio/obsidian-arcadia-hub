@@ -8,6 +8,8 @@ export class CreateIssueModal extends Modal {
 	private bodyValue: string;
 	private selectedLabels: Set<string> = new Set();
 	private availableLabels: GitHubLabel[] = [];
+	private createBtnEl: HTMLButtonElement | null = null;
+	private isSubmitting = false;
 
 	constructor(app: App, plugin: ArcadiaHubPlugin, prefillTitle = "", prefillBody = "") {
 		super(app);
@@ -68,17 +70,20 @@ export class CreateIssueModal extends Modal {
 			this.availableLabels = await this.plugin.githubAPI.getLabels(repo);
 			const labelGrid = labelsContainer.createDiv({ cls: "arcadia-hub-label-grid" });
 
-			for (const label of this.availableLabels) {
+			this.availableLabels.forEach((label, index) => {
 				const labelChip = labelGrid.createDiv({
 					cls: "arcadia-hub-label-chip",
 				});
+				// Use an index-based id: label names can contain spaces, which
+				// are not valid in id/for attributes
+				const checkboxId = `arcadia-hub-label-${index}`;
 				const checkbox = labelChip.createEl("input", {
 					type: "checkbox",
-					attr: { id: `label-${label.name}` },
+					attr: { id: checkboxId },
 				});
 				const labelEl = labelChip.createEl("label", {
 					text: label.name,
-					attr: { for: `label-${label.name}` },
+					attr: { for: checkboxId },
 				});
 				labelEl.style.backgroundColor = `#${label.color}`;
 				const brightness = this.getLuminance(label.color);
@@ -91,7 +96,7 @@ export class CreateIssueModal extends Modal {
 						this.selectedLabels.delete(label.name);
 					}
 				});
-			}
+			});
 		} catch {
 			labelsContainer.createEl("p", {
 				text: "Could not load labels.",
@@ -106,6 +111,7 @@ export class CreateIssueModal extends Modal {
 			text: "Create issue",
 			cls: "arcadia-hub-btn arcadia-hub-btn-primary",
 		});
+		this.createBtnEl = createBtn;
 		createBtn.addEventListener("click", () => { void this.createIssue(); });
 
 		const cancelBtn = btnContainer.createEl("button", {
@@ -116,6 +122,9 @@ export class CreateIssueModal extends Modal {
 	}
 
 	private async createIssue(): Promise<void> {
+		// Guard against double-clicks creating duplicate issues
+		if (this.isSubmitting) return;
+
 		if (!this.titleValue.trim()) {
 			new Notice("Issue title is required.");
 			return;
@@ -123,6 +132,12 @@ export class CreateIssueModal extends Modal {
 
 		const repo = this.plugin.getActiveRepo();
 		if (!repo) return;
+
+		this.isSubmitting = true;
+		if (this.createBtnEl) {
+			this.createBtnEl.disabled = true;
+			this.createBtnEl.setText("Creating...");
+		}
 
 		try {
 			const issue = await this.plugin.githubAPI.createIssue(
@@ -139,6 +154,12 @@ export class CreateIssueModal extends Modal {
 			void this.plugin.refreshHubView();
 		} catch (err) {
 			new Notice(`Failed to create issue: ${(err as Error).message}`);
+		} finally {
+			this.isSubmitting = false;
+			if (this.createBtnEl) {
+				this.createBtnEl.disabled = false;
+				this.createBtnEl.setText("Create issue");
+			}
 		}
 	}
 

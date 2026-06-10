@@ -132,11 +132,16 @@ export class IssuesView {
 		}
 
 		if (filtered.length === 0) {
+			let message: string;
+			if (this.labelFilter) {
+				message = "No issues match the label filter.";
+			} else {
+				message = this.showClosed ? "No closed issues found." : "No open issues found.";
+			}
 			listEl.createEl("p", {
-				text: this.showClosed ? "No closed issues found." : "No open issues found.",
+				text: message,
 				cls: "arcadia-hub-empty-state",
 			});
-			return;
 		}
 
 		for (const issue of filtered) {
@@ -224,8 +229,9 @@ export class IssuesView {
 			}
 		}
 
-		// Pagination
-		if (this.issues.length >= this.plugin.settings.issuesPerPage) {
+		// Pagination: a full page suggests more results; always allow going back
+		const mayHaveMore = this.issues.length >= this.plugin.settings.issuesPerPage;
+		if (this.currentPage > 1 || mayHaveMore) {
 			const pagination = listEl.createDiv({ cls: "arcadia-hub-pagination" });
 			if (this.currentPage > 1) {
 				const prev = pagination.createEl("button", {
@@ -237,14 +243,16 @@ export class IssuesView {
 					void this.loadAndRender();
 				});
 			}
-			const next = pagination.createEl("button", {
-				text: "Next",
-				cls: "arcadia-hub-btn",
-			});
-			next.addEventListener("click", () => {
-				this.currentPage++;
-				void this.loadAndRender();
-			});
+			if (mayHaveMore) {
+				const next = pagination.createEl("button", {
+					text: "Next",
+					cls: "arcadia-hub-btn",
+				});
+				next.addEventListener("click", () => {
+					this.currentPage++;
+					void this.loadAndRender();
+				});
+			}
 		}
 	}
 

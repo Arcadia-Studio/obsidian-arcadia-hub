@@ -48,8 +48,10 @@ var import_obsidian2 = require("obsidian");
 // src/license.ts
 var import_obsidian = require("obsidian");
 var LICENSE_CACHE_DURATION = 24 * 60 * 60 * 1e3;
+var OFFLINE_GRACE_PERIOD = 14 * 24 * 60 * 60 * 1e3;
 async function validateLicense(licenseKey, instanceName = "obsidian") {
-  var _a, _b, _c;
+  var _a, _b, _c, _d;
+  let data = null;
   try {
     const response = await (0, import_obsidian.requestUrl)({
       url: "https://api.lemonsqueezy.com/v1/licenses/validate",
@@ -58,22 +60,39 @@ async function validateLicense(licenseKey, instanceName = "obsidian") {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
-      body: JSON.stringify({ license_key: licenseKey, instance_name: instanceName })
+      body: JSON.stringify({ license_key: licenseKey, instance_name: instanceName }),
+      throw: false
     });
-    const data = response.json;
-    if (data.valid) {
-      return {
+    if (response.status === 429 || response.status >= 500) {
+      return { status: null, offline: true };
+    }
+    try {
+      data = response.json;
+    } catch (e) {
+      data = null;
+    }
+  } catch (e) {
+    return { status: null, offline: true };
+  }
+  if (data && data.valid) {
+    return {
+      status: {
         valid: true,
         instanceId: (_a = data.instance) == null ? void 0 : _a.id,
         customerEmail: (_b = data.meta) == null ? void 0 : _b.customer_email,
-        expiresAt: (_c = data.license_key) == null ? void 0 : _c.expires_at,
+        expiresAt: (_d = (_c = data.license_key) == null ? void 0 : _c.expires_at) != null ? _d : void 0,
         lastChecked: Date.now()
-      };
-    }
-    return { valid: false, lastChecked: Date.now() };
-  } catch (e) {
-    return { valid: false, lastChecked: Date.now() };
+      },
+      offline: false
+    };
   }
+  return { status: { valid: false, lastChecked: Date.now() }, offline: false };
+}
+function isCacheValid(status) {
+  return Date.now() - status.lastChecked < LICENSE_CACHE_DURATION;
+}
+function isWithinOfflineGrace(status) {
+  return status.valid && Date.now() - status.lastChecked < OFFLINE_GRACE_PERIOD;
 }
 
 // src/settings.ts
@@ -85,16 +104,17 @@ var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian2.Setting(containerEl).setName("General").setHeading();
     new import_obsidian2.Setting(containerEl).setName("GitHub integration").setHeading();
-    new import_obsidian2.Setting(containerEl).setName("Personal access token").setDesc("GitHub PAT with repo scope. Generate at GitHub > Settings > Developer settings > Personal access tokens.").addText(
-      (text) => text.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx").setValue(this.plugin.settings.githubToken).onChange((value) => {
+    new import_obsidian2.Setting(containerEl).setName("Personal access token").setDesc("GitHub token with repo scope. Stored locally in this vault's plugin settings.").addText((text) => {
+      text.setPlaceholder("ghp_xxxxxxxxxxxxxxxxxxxx").setValue(this.plugin.settings.githubToken).onChange((value) => {
         this.plugin.settings.githubToken = value.trim();
         void this.plugin.saveSettings();
-      }).inputEl.type = "password"
-    );
+      });
+      text.inputEl.type = "password";
+      text.inputEl.setAttribute("autocomplete", "off");
+    });
     new import_obsidian2.Setting(containerEl).setName("Default repository").setDesc("Format: owner/repo (e.g. octocat/hello-world)").addText(
-      (text) => text.setPlaceholder("owner/repo").setValue(this.plugin.settings.defaultRepo).onChange((value) => {
+      (text) => text.setPlaceholder("Owner/repo").setValue(this.plugin.settings.defaultRepo).onChange((value) => {
         this.plugin.settings.defaultRepo = value.trim();
         void this.plugin.saveSettings();
       })
@@ -131,27 +151,38 @@ var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
       text: `License status: ${statusDesc}`,
       cls: isPro ? "mod-success" : "mod-warning"
     });
-    new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your premium license key from Lemon Squeezy.").addText(
-      (text) => text.setPlaceholder("XXXX-XXXX-XXXX-XXXX").setValue(this.plugin.settings.licenseKey).onChange((value) => {
+    new import_obsidian2.Setting(containerEl).setName("License key").setDesc("Enter your premium license key.").addText(
+      (text) => text.setPlaceholder("Xxxx-xxxx-xxxx-xxxx").setValue(this.plugin.settings.licenseKey).onChange((value) => {
         this.plugin.settings.licenseKey = value.trim();
         void this.plugin.saveSettings();
       })
     ).addButton(
       (btn) => btn.setButtonText("Validate").setCta().onClick(() => {
         const key = this.plugin.settings.licenseKey.trim();
-        if (!key)
+        if (!key) {
+          licenseStatusEl.setText("License status: enter a license key first.");
           return;
+        }
         btn.setButtonText("Checking...").setDisabled(true);
-        void validateLicense(key).then((status) => {
+        void validateLicense(key).then((result) => {
+          btn.setButtonText("Validate").setDisabled(false);
+          if (result.offline) {
+            licenseStatusEl.setText(
+              "License status: could not reach the license server. Check your connection and try again. A previously validated license keeps working for up to 14 days offline."
+            );
+            return;
+          }
+          const status = result.status;
+          if (!status)
+            return;
           this.plugin.settings.licenseStatus = status;
           this.plugin.settings.isPro = status.valid;
           void this.plugin.saveSettings();
-          btn.setButtonText("Validate").setDisabled(false);
           if (status.valid) {
-            licenseStatusEl.textContent = `License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`;
+            licenseStatusEl.setText(`License status: active${status.customerEmail ? ` (${status.customerEmail})` : ""}`);
             licenseStatusEl.className = "mod-success";
           } else {
-            licenseStatusEl.textContent = "License status: invalid or expired. Check your key and try again.";
+            licenseStatusEl.setText("License status: invalid or expired. Check your key and try again.");
             licenseStatusEl.className = "mod-warning";
           }
         });
@@ -163,9 +194,9 @@ var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
       })
     );
     new import_obsidian2.Setting(containerEl).setName("Additional modules").setHeading();
-    new import_obsidian2.Setting(containerEl).setName("Claude Code bridge").setDesc("Coming soon: MCP server integration, session history, CLAUDE.md editor.").setDisabled(true);
-    new import_obsidian2.Setting(containerEl).setName("NotebookLM sync").setDesc("Coming soon: push notes to NotebookLM, pull audio overviews back into your vault.").setDisabled(true);
-    new import_obsidian2.Setting(containerEl).setName("AI router").setDesc("Coming soon: route content to Claude, NotebookLM, or local LLMs from context menu.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("Claude Code bridge").setDesc("Coming soon: server integration, session history, config editor.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("Audio notebook sync").setDesc("Coming soon: push notes to generate audio overviews and pull them back into your vault.").setDisabled(true);
+    new import_obsidian2.Setting(containerEl).setName("AI router").setDesc("Coming soon: route content to AI providers from context menu.").setDisabled(true);
   }
 };
 
@@ -173,10 +204,12 @@ var ArcadiaHubSettingTab = class extends import_obsidian2.PluginSettingTab {
 var import_obsidian3 = require("obsidian");
 var GITHUB_API = "https://api.github.com";
 var CACHE_TTL_MS = 6e4;
+var RATE_LIMIT_NOTICE_COOLDOWN_MS = 5 * 6e4;
 var GitHubAPI = class {
   constructor(token) {
     this.cache = /* @__PURE__ */ new Map();
     this.rateLimitRemaining = -1;
+    this.lastRateLimitNotice = 0;
     this.token = token;
   }
   setToken(token) {
@@ -204,7 +237,9 @@ var GitHubAPI = class {
   }
   async request(path, method = "GET", body) {
     if (!this.token) {
-      throw new Error("GitHub token not configured. Set it in settings.");
+      throw new Error(
+        "GitHub token not configured. Add a personal access token in the plugin settings."
+      );
     }
     const params = {
       url: `${GITHUB_API}${path}`,
@@ -213,45 +248,89 @@ var GitHubAPI = class {
         Authorization: `Bearer ${this.token}`,
         Accept: "application/vnd.github.v3+json",
         "Content-Type": "application/json"
-      }
+      },
+      throw: false
     };
     if (body) {
       params.body = JSON.stringify(body);
     }
+    let response;
     try {
-      const response = await (0, import_obsidian3.requestUrl)(params);
-      const remaining = response.headers["x-ratelimit-remaining"];
-      if (remaining !== void 0) {
-        this.rateLimitRemaining = parseInt(String(remaining), 10);
-        if (this.rateLimitRemaining < 10) {
+      response = await (0, import_obsidian3.requestUrl)(params);
+    } catch (e) {
+      throw new Error("Could not reach GitHub. Check your internet connection.");
+    }
+    const remaining = this.getHeader(response, "x-ratelimit-remaining");
+    if (remaining !== void 0) {
+      const parsed = parseInt(remaining, 10);
+      if (!Number.isNaN(parsed)) {
+        this.rateLimitRemaining = parsed;
+        const now = Date.now();
+        if (parsed < 10 && response.status < 400 && now - this.lastRateLimitNotice > RATE_LIMIT_NOTICE_COOLDOWN_MS) {
+          this.lastRateLimitNotice = now;
           new import_obsidian3.Notice(
-            `GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
+            `GitHub API rate limit low (${parsed} requests remaining).`
           );
         }
       }
-      return response.json;
-    } catch (err) {
-      const error = err;
-      if (error.status === 401) {
-        throw new Error(
-          "GitHub authentication failed. Check your personal access token in settings."
-        );
-      }
-      if (error.status === 403) {
-        throw new Error(
-          "GitHub API rate limit exceeded or insufficient permissions."
-        );
-      }
-      if (error.status === 404) {
-        throw new Error("GitHub resource not found. Check the repository name.");
-      }
+    }
+    if (response.status === 401) {
       throw new Error(
-        `GitHub API error: ${error.message || "Unknown error"}`
+        "GitHub authentication failed. Check your personal access token in settings."
       );
     }
+    if (response.status === 403 || response.status === 429) {
+      if (this.rateLimitRemaining === 0) {
+        throw new Error(
+          `GitHub rate limit exceeded. ${this.rateLimitResetMessage(response)}`
+        );
+      }
+      throw new Error(
+        "GitHub denied the request. Your token may be missing the repo scope."
+      );
+    }
+    if (response.status === 404) {
+      throw new Error("GitHub resource not found. Check the repository name.");
+    }
+    if (response.status >= 400) {
+      throw new Error(
+        `GitHub API error (HTTP ${response.status}): ${this.extractApiMessage(response)}`
+      );
+    }
+    return response.json;
+  }
+  getHeader(response, name) {
+    if (response.headers[name] !== void 0)
+      return response.headers[name];
+    for (const key of Object.keys(response.headers)) {
+      if (key.toLowerCase() === name)
+        return response.headers[key];
+    }
+    return void 0;
+  }
+  rateLimitResetMessage(response) {
+    const reset = this.getHeader(response, "x-ratelimit-reset");
+    const resetEpoch = reset !== void 0 ? parseInt(reset, 10) : NaN;
+    if (!Number.isNaN(resetEpoch)) {
+      const minutes = Math.max(
+        1,
+        Math.ceil((resetEpoch * 1e3 - Date.now()) / 6e4)
+      );
+      return `Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+    }
+    return "Try again later.";
+  }
+  extractApiMessage(response) {
+    try {
+      const data = response.json;
+      if (data && typeof data.message === "string")
+        return data.message;
+    } catch (e) {
+    }
+    return "Unknown error";
   }
   parseRepo(repo) {
-    const parts = repo.split("/");
+    const parts = repo.trim().split("/");
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
       throw new Error(
         `Invalid repository format "${repo}". Expected owner/repo.`
@@ -530,7 +609,7 @@ var IssuesView = class {
       this.renderIssueList();
     });
     const newIssueBtn = filterBar.createEl("button", {
-      text: "+ New issue",
+      text: "+ new issue",
       cls: "arcadia-hub-btn arcadia-hub-btn-primary"
     });
     newIssueBtn.addEventListener("click", () => {
@@ -587,11 +666,16 @@ var IssuesView = class {
       );
     }
     if (filtered.length === 0) {
+      let message;
+      if (this.labelFilter) {
+        message = "No issues match the label filter.";
+      } else {
+        message = this.showClosed ? "No closed issues found." : "No open issues found.";
+      }
       listEl.createEl("p", {
-        text: this.showClosed ? "No closed issues found." : "No open issues found.",
+        text: message,
         cls: "arcadia-hub-empty-state"
       });
-      return;
     }
     for (const issue of filtered) {
       const item = listEl.createDiv({ cls: "arcadia-hub-issue-item" });
@@ -662,7 +746,8 @@ var IssuesView = class {
         });
       }
     }
-    if (this.issues.length >= this.plugin.settings.issuesPerPage) {
+    const mayHaveMore = this.issues.length >= this.plugin.settings.issuesPerPage;
+    if (this.currentPage > 1 || mayHaveMore) {
       const pagination = listEl.createDiv({ cls: "arcadia-hub-pagination" });
       if (this.currentPage > 1) {
         const prev = pagination.createEl("button", {
@@ -674,14 +759,16 @@ var IssuesView = class {
           void this.loadAndRender();
         });
       }
-      const next = pagination.createEl("button", {
-        text: "Next",
-        cls: "arcadia-hub-btn"
-      });
-      next.addEventListener("click", () => {
-        this.currentPage++;
-        void this.loadAndRender();
-      });
+      if (mayHaveMore) {
+        const next = pagination.createEl("button", {
+          text: "Next",
+          cls: "arcadia-hub-btn"
+        });
+        next.addEventListener("click", () => {
+          this.currentPage++;
+          void this.loadAndRender();
+        });
+      }
     }
   }
   getLuminance(hex) {
@@ -920,7 +1007,7 @@ var ReposView = class {
       });
       if (isActive) {
         header.createEl("span", {
-          text: "active",
+          text: "Active",
           cls: "arcadia-hub-repo-active-badge"
         });
       }
@@ -1031,18 +1118,21 @@ var HubView = class extends import_obsidian5.ItemView {
     for (const tab of tabs) {
       const tabBtn = tabBar.createEl("button", {
         text: tab.label,
-        cls: `arcadia-hub-tab ${this.activeTab === tab.value ? "is-active" : ""}`
+        cls: `arcadia-hub-tab ${this.activeTab === tab.value ? "is-active" : ""}`,
+        attr: { "data-tab": tab.value }
       });
       tabBtn.addEventListener("click", () => {
-        this.activeTab = tab.value;
-        void this.renderActiveTab();
-        tabBar.querySelectorAll(".arcadia-hub-tab").forEach(
-          (t) => t.removeClass("is-active")
-        );
-        tabBtn.addClass("is-active");
+        void this.setTab(tab.value);
       });
     }
     this.contentArea = container.createDiv({ cls: "arcadia-hub-content" });
+    await this.renderActiveTab();
+  }
+  async setTab(tab) {
+    this.activeTab = tab;
+    this.containerEl.querySelectorAll(".arcadia-hub-tab").forEach((btn) => {
+      btn.toggleClass("is-active", btn.dataset.tab === tab);
+    });
     await this.renderActiveTab();
   }
   async renderActiveTab() {
@@ -1084,6 +1174,8 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     super(app);
     this.selectedLabels = /* @__PURE__ */ new Set();
     this.availableLabels = [];
+    this.createBtnEl = null;
+    this.isSubmitting = false;
     this.plugin = plugin;
     this.titleValue = prefillTitle;
     this.bodyValue = prefillBody;
@@ -1124,17 +1216,18 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     try {
       this.availableLabels = await this.plugin.githubAPI.getLabels(repo);
       const labelGrid = labelsContainer.createDiv({ cls: "arcadia-hub-label-grid" });
-      for (const label of this.availableLabels) {
+      this.availableLabels.forEach((label, index) => {
         const labelChip = labelGrid.createDiv({
           cls: "arcadia-hub-label-chip"
         });
+        const checkboxId = `arcadia-hub-label-${index}`;
         const checkbox = labelChip.createEl("input", {
           type: "checkbox",
-          attr: { id: `label-${label.name}` }
+          attr: { id: checkboxId }
         });
         const labelEl = labelChip.createEl("label", {
           text: label.name,
-          attr: { for: `label-${label.name}` }
+          attr: { for: checkboxId }
         });
         labelEl.style.backgroundColor = `#${label.color}`;
         const brightness = this.getLuminance(label.color);
@@ -1146,7 +1239,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
             this.selectedLabels.delete(label.name);
           }
         });
-      }
+      });
     } catch (e) {
       labelsContainer.createEl("p", {
         text: "Could not load labels.",
@@ -1158,6 +1251,7 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
       text: "Create issue",
       cls: "arcadia-hub-btn arcadia-hub-btn-primary"
     });
+    this.createBtnEl = createBtn;
     createBtn.addEventListener("click", () => {
       void this.createIssue();
     });
@@ -1168,6 +1262,8 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     cancelBtn.addEventListener("click", () => this.close());
   }
   async createIssue() {
+    if (this.isSubmitting)
+      return;
     if (!this.titleValue.trim()) {
       new import_obsidian6.Notice("Issue title is required.");
       return;
@@ -1175,6 +1271,11 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
     const repo = this.plugin.getActiveRepo();
     if (!repo)
       return;
+    this.isSubmitting = true;
+    if (this.createBtnEl) {
+      this.createBtnEl.disabled = true;
+      this.createBtnEl.setText("Creating...");
+    }
     try {
       const issue = await this.plugin.githubAPI.createIssue(
         repo,
@@ -1187,6 +1288,12 @@ var CreateIssueModal = class extends import_obsidian6.Modal {
       void this.plugin.refreshHubView();
     } catch (err) {
       new import_obsidian6.Notice(`Failed to create issue: ${err.message}`);
+    } finally {
+      this.isSubmitting = false;
+      if (this.createBtnEl) {
+        this.createBtnEl.disabled = false;
+        this.createBtnEl.setText("Create issue");
+      }
     }
   }
   getLuminance(hex) {
@@ -1258,6 +1365,9 @@ var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
       }
     });
     this.setupAutoRefresh();
+    this.app.workspace.onLayoutReady(() => {
+      void this.refreshLicenseState();
+    });
   }
   onunload() {
     if (this.refreshInterval !== null) {
@@ -1280,7 +1390,7 @@ var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
   }
   setActiveRepo(repo) {
     this.activeRepo = repo;
-    this.refreshHubView();
+    void this.refreshHubView();
   }
   openCreateIssueModal(title = "", body = "") {
     new CreateIssueModal(this.app, this, title, body).open();
@@ -1288,9 +1398,8 @@ var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
   async refreshHubView() {
     const leaves = this.app.workspace.getLeavesOfType(HUB_VIEW_TYPE);
     for (const leaf of leaves) {
-      const view = leaf.view;
-      if (view && view.refresh) {
-        await view.refresh();
+      if (leaf.view instanceof HubView) {
+        await leaf.view.refresh();
       }
     }
   }
@@ -1309,7 +1418,45 @@ var ArcadiaHubPlugin = class extends import_obsidian7.Plugin {
         active: true
       });
     }
-    this.app.workspace.revealLeaf(leaf);
+    await this.app.workspace.revealLeaf(leaf);
+    if (tab && leaf.view instanceof HubView) {
+      await leaf.view.setTab(tab);
+    }
+  }
+  /**
+   * Revalidates the stored license key in the background.
+   * Fails soft when the license server is unreachable: a previously
+   * validated license keeps working for the offline grace period.
+   */
+  async refreshLicenseState() {
+    const key = this.settings.licenseKey.trim();
+    if (!key)
+      return;
+    const cached = this.settings.licenseStatus;
+    if (cached && cached.valid && isCacheValid(cached))
+      return;
+    const result = await validateLicense(key);
+    if (result.offline) {
+      if (this.settings.isPro && cached && cached.valid && !isWithinOfflineGrace(cached)) {
+        this.settings.isPro = false;
+        await this.saveData(this.settings);
+        new import_obsidian7.Notice(
+          "Arcadia Hub: the license server has been unreachable for over 14 days. Premium features are paused until the license can be revalidated."
+        );
+      }
+      return;
+    }
+    if (!result.status)
+      return;
+    const wasPro = this.settings.isPro;
+    this.settings.licenseStatus = result.status;
+    this.settings.isPro = result.status.valid;
+    await this.saveData(this.settings);
+    if (wasPro && !result.status.valid) {
+      new import_obsidian7.Notice(
+        "Arcadia Hub: your license is no longer valid. Premium features are disabled."
+      );
+    }
   }
   setupAutoRefresh() {
     if (this.refreshInterval !== null) {

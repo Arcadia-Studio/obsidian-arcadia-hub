@@ -1,4 +1,4 @@
-import { requestUrl, RequestUrlParam, Notice } from "obsidian";
+import { requestUrl, RequestUrlParam, RequestUrlResponse, Notice } from "obsidian";
 import {
 	GitHubRepo,
 	GitHubIssue,
@@ -9,11 +9,13 @@ import {
 
 const GITHUB_API = "https://api.github.com";
 const CACHE_TTL_MS = 60_000; // 60 seconds
+const RATE_LIMIT_NOTICE_COOLDOWN_MS = 5 * 60_000; // notify at most every 5 minutes
 
 export class GitHubAPI {
 	private token: string;
 	private cache: Map<string, CacheEntry<unknown>> = new Map();
 	private rateLimitRemaining = -1;
+	private lastRateLimitNotice = 0;
 
 	constructor(token: string) {
 		this.token = token;
@@ -52,7 +54,9 @@ export class GitHubAPI {
 		body?: unknown
 	): Promise<T> {
 		if (!this.token) {
-			throw new Error("GitHub token not configured. Set it in settings.");
+			throw new Error(
+				"GitHub token not configured. Add a personal access token in the plugin settings."
+			);
 		}
 
 		const params: RequestUrlParam = {
@@ -63,50 +67,101 @@ export class GitHubAPI {
 				Accept: "application/vnd.github.v3+json",
 				"Content-Type": "application/json",
 			},
+			throw: false,
 		};
 
 		if (body) {
 			params.body = JSON.stringify(body);
 		}
 
+		let response: RequestUrlResponse;
 		try {
-			const response = await requestUrl(params);
+			response = await requestUrl(params);
+		} catch {
+			throw new Error("Could not reach GitHub. Check your internet connection.");
+		}
 
-			// Track rate limit
-			const remaining = response.headers["x-ratelimit-remaining"];
-			if (remaining !== undefined) {
-				this.rateLimitRemaining = parseInt(String(remaining), 10);
-				if (this.rateLimitRemaining < 10) {
+		// Track rate limit and warn before it runs out (throttled to avoid spam)
+		const remaining = this.getHeader(response, "x-ratelimit-remaining");
+		if (remaining !== undefined) {
+			const parsed = parseInt(remaining, 10);
+			if (!Number.isNaN(parsed)) {
+				this.rateLimitRemaining = parsed;
+				const now = Date.now();
+				if (
+					parsed < 10 &&
+					response.status < 400 &&
+					now - this.lastRateLimitNotice > RATE_LIMIT_NOTICE_COOLDOWN_MS
+				) {
+					this.lastRateLimitNotice = now;
 					new Notice(
-						`GitHub API rate limit low (${this.rateLimitRemaining} remaining).`
+						`GitHub API rate limit low (${parsed} requests remaining).`
 					);
 				}
 			}
+		}
 
-			return response.json as T;
-		} catch (err: unknown) {
-			const error = err as { status?: number; message?: string };
-			if (error.status === 401) {
-				throw new Error(
-					"GitHub authentication failed. Check your personal access token in settings."
-				);
-			}
-			if (error.status === 403) {
-				throw new Error(
-					"GitHub API rate limit exceeded or insufficient permissions."
-				);
-			}
-			if (error.status === 404) {
-				throw new Error("GitHub resource not found. Check the repository name.");
-			}
+		if (response.status === 401) {
 			throw new Error(
-				`GitHub API error: ${error.message || "Unknown error"}`
+				"GitHub authentication failed. Check your personal access token in settings."
 			);
 		}
+		if (response.status === 403 || response.status === 429) {
+			if (this.rateLimitRemaining === 0) {
+				throw new Error(
+					`GitHub rate limit exceeded. ${this.rateLimitResetMessage(response)}`
+				);
+			}
+			throw new Error(
+				"GitHub denied the request. Your token may be missing the repo scope."
+			);
+		}
+		if (response.status === 404) {
+			throw new Error("GitHub resource not found. Check the repository name.");
+		}
+		if (response.status >= 400) {
+			throw new Error(
+				`GitHub API error (HTTP ${response.status}): ${this.extractApiMessage(response)}`
+			);
+		}
+
+		return response.json as T;
+	}
+
+	private getHeader(response: RequestUrlResponse, name: string): string | undefined {
+		if (response.headers[name] !== undefined) return response.headers[name];
+		// Header casing is not guaranteed; fall back to a case-insensitive match
+		for (const key of Object.keys(response.headers)) {
+			if (key.toLowerCase() === name) return response.headers[key];
+		}
+		return undefined;
+	}
+
+	private rateLimitResetMessage(response: RequestUrlResponse): string {
+		const reset = this.getHeader(response, "x-ratelimit-reset");
+		const resetEpoch = reset !== undefined ? parseInt(reset, 10) : NaN;
+		if (!Number.isNaN(resetEpoch)) {
+			const minutes = Math.max(
+				1,
+				Math.ceil((resetEpoch * 1000 - Date.now()) / 60_000)
+			);
+			return `Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+		}
+		return "Try again later.";
+	}
+
+	private extractApiMessage(response: RequestUrlResponse): string {
+		try {
+			const data = response.json as { message?: string } | null;
+			if (data && typeof data.message === "string") return data.message;
+		} catch {
+			// Response body was not JSON
+		}
+		return "Unknown error";
 	}
 
 	private parseRepo(repo: string): { owner: string; name: string } {
-		const parts = repo.split("/");
+		const parts = repo.trim().split("/");
 		if (parts.length !== 2 || !parts[0] || !parts[1]) {
 			throw new Error(
 				`Invalid repository format "${repo}". Expected owner/repo.`

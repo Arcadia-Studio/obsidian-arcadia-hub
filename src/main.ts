@@ -1,9 +1,10 @@
-import { Plugin, WorkspaceLeaf, MarkdownView } from "obsidian";
-import { ArcadiaHubSettings, DEFAULT_SETTINGS } from "./types";
+import { Notice, Plugin, WorkspaceLeaf, MarkdownView } from "obsidian";
+import { ArcadiaHubSettings, DEFAULT_SETTINGS, HubTab } from "./types";
 import { ArcadiaHubSettingTab } from "./settings";
 import { GitHubAPI } from "./github/github-api";
 import { HubView, HUB_VIEW_TYPE } from "./hub-view";
 import { CreateIssueModal } from "./github/create-issue-modal";
+import { validateLicense, isCacheValid, isWithinOfflineGrace } from "./license";
 
 export default class ArcadiaHubPlugin extends Plugin {
 	settings: ArcadiaHubSettings = DEFAULT_SETTINGS;
@@ -25,7 +26,7 @@ export default class ArcadiaHubPlugin extends Plugin {
 		this.addSettingTab(new ArcadiaHubSettingTab(this.app, this));
 
 		// Add ribbon icon
-		this.addRibbonIcon("git-branch", "Open arcadia hub", () => {
+		this.addRibbonIcon("git-branch", "Open Arcadia Hub", () => {
 			void this.activateView();
 		});
 
@@ -67,6 +68,11 @@ export default class ArcadiaHubPlugin extends Plugin {
 
 		// Setup auto-refresh
 		this.setupAutoRefresh();
+
+		// Revalidate the license in the background once the workspace is ready
+		this.app.workspace.onLayoutReady(() => {
+			void this.refreshLicenseState();
+		});
 	}
 
 	onunload(): void {
@@ -110,14 +116,13 @@ export default class ArcadiaHubPlugin extends Plugin {
 	async refreshHubView(): Promise<void> {
 		const leaves = this.app.workspace.getLeavesOfType(HUB_VIEW_TYPE);
 		for (const leaf of leaves) {
-			const view = leaf.view as unknown as HubView;
-			if (view && view.refresh) {
-				await view.refresh();
+			if (leaf.view instanceof HubView) {
+				await leaf.view.refresh();
 			}
 		}
 	}
 
-	private async activateView(tab?: string): Promise<void> {
+	private async activateView(tab?: HubTab): Promise<void> {
 		const existing = this.app.workspace.getLeavesOfType(HUB_VIEW_TYPE);
 		let leaf: WorkspaceLeaf;
 
@@ -133,7 +138,50 @@ export default class ArcadiaHubPlugin extends Plugin {
 			});
 		}
 
-		void this.app.workspace.revealLeaf(leaf);
+		await this.app.workspace.revealLeaf(leaf);
+
+		if (tab && leaf.view instanceof HubView) {
+			await leaf.view.setTab(tab);
+		}
+	}
+
+	/**
+	 * Revalidates the stored license key in the background.
+	 * Fails soft when the license server is unreachable: a previously
+	 * validated license keeps working for the offline grace period.
+	 */
+	private async refreshLicenseState(): Promise<void> {
+		const key = this.settings.licenseKey.trim();
+		if (!key) return;
+
+		const cached = this.settings.licenseStatus;
+		if (cached && cached.valid && isCacheValid(cached)) return;
+
+		const result = await validateLicense(key);
+
+		if (result.offline) {
+			// Keep premium active within the grace period; pause it after that,
+			// but keep the key and cached status so the next successful check restores it.
+			if (this.settings.isPro && cached && cached.valid && !isWithinOfflineGrace(cached)) {
+				this.settings.isPro = false;
+				await this.saveData(this.settings);
+				new Notice(
+					"Arcadia Hub: the license server has been unreachable for over 14 days. Premium features are paused until the license can be revalidated."
+				);
+			}
+			return;
+		}
+
+		if (!result.status) return;
+		const wasPro = this.settings.isPro;
+		this.settings.licenseStatus = result.status;
+		this.settings.isPro = result.status.valid;
+		await this.saveData(this.settings);
+		if (wasPro && !result.status.valid) {
+			new Notice(
+				"Arcadia Hub: your license is no longer valid. Premium features are disabled."
+			);
+		}
 	}
 
 	private setupAutoRefresh(): void {

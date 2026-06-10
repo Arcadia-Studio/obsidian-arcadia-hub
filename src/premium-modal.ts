@@ -1,4 +1,4 @@
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Notice, Setting } from 'obsidian';
 import { validateLicense, LicenseStatus } from './license';
 
 interface PremiumPlugin {
@@ -32,6 +32,8 @@ export class PremiumModal extends Modal {
 			cls: 'setting-item-description',
 		});
 
+		let licenseKey = this.plugin.settings.licenseKey;
+
 		new Setting(contentEl)
 			.setName('License key')
 			.setDesc('Enter your license key')
@@ -39,20 +41,15 @@ export class PremiumModal extends Modal {
 				this.textInputEl = text.inputEl;
 				text
 					.setPlaceholder('Xxxx-xxxx-xxxx-xxxx')
+					.setValue(licenseKey)
 					.onChange((value) => {
-						if (value.trim().length > 10) {
-							void validateLicense(value.trim()).then((status) => {
-								if (status.valid) {
-									this.plugin.settings.licenseKey = value.trim();
-									this.plugin.settings.licenseStatus = status;
-									this.plugin.settings.isPro = true;
-									void this.plugin.saveSettings();
-									this.close();
-								}
-							});
-						}
+						licenseKey = value.trim();
 					});
 			});
+
+		const feedbackEl = contentEl.createEl('p', {
+			cls: 'setting-item-description',
+		});
 
 		new Setting(contentEl)
 			.addButton(btn => btn
@@ -63,11 +60,31 @@ export class PremiumModal extends Modal {
 				})
 			)
 			.addButton(btn => btn
-				.setButtonText('I have a license key')
+				.setButtonText('Activate')
 				.onClick(() => {
-					if (this.textInputEl) {
-						this.textInputEl.focus();
+					if (!licenseKey) {
+						feedbackEl.setText('Enter a license key first.');
+						this.textInputEl?.focus();
+						return;
 					}
+					btn.setButtonText('Checking...').setDisabled(true);
+					void validateLicense(licenseKey).then(async (result) => {
+						btn.setButtonText('Activate').setDisabled(false);
+						if (result.offline) {
+							feedbackEl.setText('Could not reach the license server. Check your connection and try again.');
+							return;
+						}
+						if (result.status?.valid) {
+							this.plugin.settings.licenseKey = licenseKey;
+							this.plugin.settings.licenseStatus = result.status;
+							this.plugin.settings.isPro = true;
+							await this.plugin.saveSettings();
+							new Notice('Premium features activated.');
+							this.close();
+						} else {
+							feedbackEl.setText('License key is invalid or expired. Check your key and try again.');
+						}
+					});
 				})
 			);
 	}

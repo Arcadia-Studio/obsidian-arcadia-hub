@@ -1,63 +1,82 @@
 # Arcadia Hub
 
+Arcadia Hub puts your GitHub workflow inside Obsidian. Browse repositories, triage issues, and review pull requests from a sidebar panel, then turn any note into a GitHub issue without leaving your vault. If your project notes and your project code live in different windows, this plugin closes the gap.
+
 ![Arcadia Hub](docs/screenshot.png)
 
-A GitHub integration sidebar for Obsidian: browse repositories, manage issues and pull requests, monitor CI status, and create GitHub issues directly from your notes.
-
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Obsidian](https://img.shields.io/badge/Obsidian-0.16+-purple)
+![Version](https://img.shields.io/badge/version-1.0.6-blue)
+![Obsidian](https://img.shields.io/badge/Obsidian-1.3.5+-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 > Desktop only.
 
 ## Features
 
-### Free
-- GitHub repository browser with configurable default repo
-- Issues viewer with open/closed filtering
-- Pull request dashboard showing PR status and metadata
-- GitHub Actions and CI status monitoring
-- Create a GitHub issue from the current note (title and body pre-filled)
-- Auto-refresh on a configurable interval
-- Switch active repository without leaving Obsidian
+| Feature | Free | Premium |
+|---|---|---|
+| Repository browser with active repo switching | Yes | Yes |
+| Issues viewer with open/closed filter, label filter, and pagination | Yes | Yes |
+| Pull request dashboard with state and review status | Yes | Yes |
+| Create a GitHub issue from the current note | Yes | Yes |
+| Auto-refresh on a configurable interval | Yes | Yes |
+| Claude Code bridge (in development) | No | Yes |
+| Audio notebook sync (in development) | No | Yes |
+| AI router (in development) | No | Yes |
 
-### Premium
-- Claude Code bridge for AI-assisted development workflows
-- NotebookLM sync to push research notes into NotebookLM projects
-- AI Router for routing tasks across multiple AI services from one panel
-- Hub dashboard aggregating multiple services (GitHub, CI, AI) in a single view
-- Get Premium at [arcadia-studio.lemonsqueezy.com](https://arcadia-studio.lemonsqueezy.com)
+The entire GitHub module is free. Premium covers the additional modules listed in settings, which are in development and will ship in future releases. Buying now supports development and unlocks them on arrival.
 
-## Installation
+## Install
 
-1. Open Obsidian Settings
-2. Go to Community Plugins and disable Safe Mode
-3. Click Browse and search for "Arcadia Hub"
-4. Install and enable the plugin
+Community Plugins listing is pending review. Until it is approved, install with one of these methods:
 
-## Manual Installation
+### BRAT (recommended)
 
-1. Download the latest release from [GitHub Releases](https://github.com/Arcadia-Studio/obsidian-arcadia-hub/releases)
-2. Extract to your vault's `.obsidian/plugins/arcadia-hub/` folder
-3. Reload Obsidian and enable the plugin
+1. Install the [BRAT plugin](https://obsidian.md/plugins?id=obsidian42-brat) from Community Plugins
+2. In BRAT settings, choose "Add beta plugin" and enter `Arcadia-Studio/obsidian-arcadia-hub`
+3. Enable Arcadia Hub in Settings > Community plugins
 
-## Setup
+### Manual install
 
-1. Generate a GitHub Personal Access Token with `repo` scope at [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Open Settings > Arcadia Hub and paste your token
-3. Set your default repository (format: `owner/repo`)
-4. Open the Hub via the ribbon icon (git-branch) or the "Open Hub" command
+1. Download `main.js`, `manifest.json`, and `styles.css` from the latest [GitHub release](https://github.com/Arcadia-Studio/obsidian-arcadia-hub/releases)
+2. Create the folder `.obsidian/plugins/arcadia-hub/` in your vault and copy the three files into it
+3. Reload Obsidian and enable Arcadia Hub in Settings > Community plugins
 
-## Usage
+## Quick start
 
-The Hub sidebar has tabs for Issues, Pull Requests, and Actions. Use the "Create Issue from Note" command to open a modal pre-filled with the current note's title and selected text (or full content).
+1. Generate a GitHub personal access token with `repo` scope at [github.com/settings/tokens](https://github.com/settings/tokens)
+2. Open Settings > Arcadia Hub and paste the token
+3. Set your default repository in `owner/repo` format
+4. Open the hub from the ribbon icon (git branch) or the "Open hub" command
 
-## Premium License
+From there: the Issues tab lists open issues with label filtering and pagination, the Pull requests tab shows PR state and review status, and the Repos tab lets you switch the active repository. Run "Create issue from note" in any note to open a pre-filled issue form (selected text becomes the body; with no selection, the full note is used).
 
-Arcadia Hub uses a freemium model. Core features are free. Premium features require a license key from [Lemon Squeezy](https://arcadia-studio.lemonsqueezy.com).
+## Settings
 
-To activate: Settings > Arcadia Hub > Enter License Key
+| Setting | Description | Default |
+|---|---|---|
+| Personal access token | GitHub token with `repo` scope. Stored locally in this vault's plugin settings and masked in the UI. | empty |
+| Default repository | Repository shown on open, in `owner/repo` format | empty |
+| Show closed issues | Include closed issues in the issues list | off |
+| Issues per page | Number of issues loaded per page (1 to 100) | 25 |
+| Auto-refresh interval | Minutes between automatic refreshes; 0 disables | 0 |
+| License key | Premium license key with a validate button | empty |
 
-## About Arcadia Studio
+## Pricing
 
-Arcadia Studio builds productivity tools for Obsidian users. [arcadia-studio.lemonsqueezy.com](https://arcadia-studio.lemonsqueezy.com)
+The GitHub module is free, with no account beyond your own GitHub token. Premium modules require a one-time license from [arcadia-studio.lemonsqueezy.com](https://arcadia-studio.lemonsqueezy.com).
+
+To activate: Settings > Arcadia Hub > License key > Validate. Licenses are validated against the Lemon Squeezy API. Once validated, premium keeps working for up to 14 days without a connection to the license server, so an offline stretch never locks you out.
+
+## Network use and privacy
+
+- The plugin calls the GitHub API (`api.github.com`) to list repositories, issues, and pull requests, and to create issues. Your token is sent only to GitHub and stored only in your vault's plugin settings.
+- License validation calls the Lemon Squeezy API (`api.lemonsqueezy.com`) and sends only the license key you enter.
+- No telemetry, no analytics, no other network calls.
+
+## Support
+
+Questions, bugs, feature requests: [open an issue](https://github.com/Arcadia-Studio/obsidian-arcadia-hub/issues) or email arcadiastudio77@gmail.com.
+
+## License
+
+The plugin code is MIT licensed. See [LICENSE](LICENSE).
